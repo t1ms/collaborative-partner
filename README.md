@@ -23,12 +23,13 @@
    - **Fluid Alliance Voice**: Calibrates turn-level length and reflection using working alliance principles* — synthesizing 2–3 sentence turns that pair verbatim reflection with a single crisp question.
    - **Ladder of Abstraction Navigation**: Oscillates vertically between high-level strategic intent and concrete ground-level moments without dead-level abstraction.
 
-2. **Domain-Grounded Problem Lenses & Extensible Overlays**
-   - **Same Engine, Domain-Grounded Lexicon**: While the state machine and 11-pattern extraction remain universal, lightweight markdown overlay packs (`02_map/overlays/`) tailor the vocabulary, perspectives, and output artifacts per domain:
+2. **Pluggable Domain Lenses & Extensible Overlays**
+   - **Pluggable Architecture (Not a Closed Set)**: The exact same Socratic engine operates across **three live initial reference lenses** (`Software Engineering`, `Product & UX Design`, and `Leadership & Alignment`) via modular overlay packs in [`02_map/overlays/`](02_map/overlays/), backed by a universal Clean Language fallback. **New domain lenses can be added by simply authoring a ~20-line markdown spec without touching core agent logic** (see reference example: [`02_map/overlays/se.md`](02_map/overlays/se.md)).
+   - **Initial Reference Lenses**:
      - **Software & SRE Engineering (`se`)**: Telemetry traces, p95/p99 latency, queue depth, database saturation $\to$ generates an *Architecture Decision Record (ADR)*.
      - **Product & UX Design (`design`)**: Onboarding drop-offs, user mental models, affordances, Figma flows $\to$ generates a *User Journey & Friction Canvas*.
      - **Engineering Leadership (`leadership`)**: Stakeholder incentives, 1-on-1 feedback, sprint backlog commitments $\to$ generates a *Strategic Outcome & Alignment Record (WFO)*.
-     - **Universal / Baseline (`general`)**: Clean Language fallback for cross-cutting or personal challenges $\to$ generates a *Problem Architecture Record*.
+     - **Universal / Baseline (`general`)**: Clean Language fallback for general or cross-cutting dilemmas $\to$ generates a *Problem Architecture Record*.
    - **1-Turn Cross-Domain Blending**: Automatic 2-turn hysteresis and 1-turn cross-domain bridging prevent jarring context flips when an engineer mentions stakeholder pings or a designer mentions backend latency.
    - **Forbidden Clinical Isolation**: Strictly forbids therapeutic and metacognitive jargon (*"psychological distance"*, *"filtering out"*) from leaking into technical or design workflows.
 
