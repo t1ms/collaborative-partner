@@ -27,9 +27,9 @@ Do NOT load: intermediate draft revisions or unverified online summaries.
 *Grounds structural clarity, cognitive ergonomics, and agent experience.*
 - `Theoretical Foundations, Structural Frameworks, and Operational Frontiers of Technical Communication.md` — Cognitive Load Theory (Sweller CLT), Information Mapping (Horn), Minimalist Instruction (Carroll), Diátaxis, arc42, C4, ADRs, ASD-STE100, and Agent Experience (AX).
 
-### 3. Google Cloud & Hackathon Technical Architecture (`01_source/`)
-*Grounds ADK 2 multi-agent orchestration, persistent state machines, self-improvement, and judging compliance.*
-- `judging-criteria.md` — Live judging breakdown from DevRel (Christina Lin, Willie): Collaborative Partner track specifics (active mutation vs basic RAG), 4-min video blueprint, and GCP backend proof.
+### 3. Google Cloud Architecture & Multi-Agent Specifications (`01_source/`)
+*Grounds ADK 2 multi-agent orchestration, persistent state machines, self-improvement, and system performance.*
+- `product-requirements.md` — Technical breakdown from DevRel workshops (Christina Lin, Willie): Collaborative Partner architecture specifics (active mutation vs basic RAG), 4-min video blueprint, and GCP backend proof.
 - `orchestration-google-adk.md` — ADK 2 Multi-Agent Orchestration patterns (Graph Workflows / `JoinNode`, Collaborative Teams / Concierge, Dynamic LLM-shaped workflows).
 - `long-running-agent.md` — Persistent ADK workflows (`DatabaseSessionService`, `ResumabilityConfig`, `LongRunningFunctionTool`, Idempotency guards, Cloud Trace).
 - `building-a-self-evolving-agent.md` — Autonomous self-improvement, `adk optimize`, trajectory-based evaluation vs "looks-complete" cheating, Vertex Gen AI Eval, Gemma fine-tuning traces.

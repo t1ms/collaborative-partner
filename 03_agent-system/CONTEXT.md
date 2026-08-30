@@ -22,7 +22,7 @@ Do NOT load: prior unverified draft revisions. (Consult `../_archive/agent-syste
 - `socratic-layer.md` — Paul-Elder question mapping and bedrock framing.
 - `system-prompts.md` — Orchestrator and phase execution prompts.
 - `demo-script.md` & `worked-example-leadership.md` — End-to-end evaluation traces.
-- `judging-mapping.md` — Hackathon rubric alignment matrix.
+- `design-rationale.md` — User requirements, architectural decisions, and verification matrix.
 - `INDEX.md` — Design index and build status.
 
 ## Human check

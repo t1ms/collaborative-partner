@@ -8,7 +8,7 @@ Built on ICM: folders carry sequencing, hierarchy carries context, files carry s
 
 | Folder | What it holds |
 |---|---|
-| `01_source/` | Canonical research papers, empirical validity references, and Google Cloud ADK / judging guides |
+| `01_source/` | Canonical research papers, empirical validity references, and Google Cloud ADK architecture guides |
 | `02_map/` | Distilled cognitive models, taxonomies, and verification protocols |
 | `03_agent-system/` | Agent architecture, state machine, Socratic layer, prompts, and worked examples |
 | `_templates/` | Blank starters for new map modules and worked examples |
@@ -20,7 +20,7 @@ Built on ICM: folders carry sequencing, hierarchy carries context, files carry s
 |---|---|---|
 | inspecting source papers | `01_source/CONTEXT.md` | read canonical materials |
 | mapping research to models | `02_map/CONTEXT.md` | human verifies against paper |
-| designing/building agent | `03_agent-system/CONTEXT.md` | human checks judging alignment |
+| designing/building agent | `03_agent-system/CONTEXT.md` | human checks design alignment |
 | modifying existing design files | create new version or move previous to `_archive/` | verify active file |
 | referencing past design variants | check `_archive/agent-system/` | return with context to active work |
 | asked for status | scan `03_agent-system/INDEX.md` | report current build state |

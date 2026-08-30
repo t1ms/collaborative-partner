@@ -1,10 +1,14 @@
 # Collaborative Thinking Partner — System Architecture
 
-## 0. Strategic framing (from VERIFICATION.md)
-Do **not** lead with "NLP" or "Bandler." Position the system as a **structured problem-clarification engine**: a formal grammar for problem statements plus a deterministic question-routing engine. The intellectual lineage is real but reframed — Meta-Model ≈ Socratic questioning + CBT distortion catalogue; Well-Formed Outcomes ≈ goal-setting theory (Locke & Latham) + motivational interviewing; perceptual positions ≈ perspective-taking. Present the contested origins honestly only if asked; never center them.
+## 0. System Definition & Core Hypothesis
+The **Collaborative Thinking Partner** is a formal grammar for problem statements paired with a deterministic Socratic question-routing engine and a live mutating Problem Graph.
 
-## 1. Problem → solution shape
-Users arrive with vague, distorted, or stuck problem statements ("I can't decide," "they never listen," "this is overwhelming"). The agent does **not** give advice. It debugs the *statement* — surfacing missing structure, asking one precision question at a time, and producing a well-formed, actionable outcome the user owns.
+Rather than acting as a generic conversational advisor, the system debugs the *logical and linguistic structure* of problem statements — identifying implicit assumptions, cognitive distortions, and missing predicates to guide the user toward a self-authored, Well-Formed Outcome.
+
+*(Empirical grounding and lineage are detailed in [`02_map/VERIFICATION.md`](../02_map/VERIFICATION.md) and [`03_agent-system/design-rationale.md`](design-rationale.md)).*
+
+## 1. Problem → Solution Shape
+Users arrive with vague, distorted, or stuck problem statements (*"I can't decide,"* *"they never listen,"* *"this is overwhelming"*). The agent does **not** give advice or prescribe solutions. It debugs the *statement* — surfacing missing structure, asking one precision question at a time, and rendering a well-formed, actionable outcome the user owns.
 
 ## 2. Visual Architecture Diagram
 ![System Architecture](architecture-diagram.png)

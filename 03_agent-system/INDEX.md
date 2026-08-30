@@ -10,13 +10,13 @@ Build design for the Collaborative Thinking Partner. All decisions reflect the d
 | `socratic-layer.md` | **Source of truth** for Socratic messaging: 11 patterns → 8 Paul-Elder moves, templates, voice rules, bedrock framing (§5), **deepening protocol (§7)** | Created 2026-08-28, deepening added |
 | `system-prompts.md` | Orchestrator / phase / guardrail prompts — Socratic + empathic, one question/turn, **deepening voice rule** | Updated 2026-08-28 |
 | `demo-script.md` | Professional-framing demo (founder co-founder conflict) — Socratic + bedrock | Updated 2026-08-28 |
-| `judging-mapping.md` | Hackathon rubric → evidence, now includes **2-cycle deepening ladder** as Twist differentiator | Updated 2026-08-28 |
+| `design-rationale.md` | User requirements, architectural decisions, quality benchmarks, and anti-pattern guards | Updated 2026-08-31 |
 | `implementation-plan.md` | Complete 4-step engineering blueprint: Environment, Core Backend, Graph Persistence, Split-Pane Web UI | Created 2026-08-30 |
-| `gcp-deployment-plan.md` | GCP Cloud Run deployment, Vertex AI integration, containerization, and judging video blueprint | Created 2026-08-31 |
+| `gcp-deployment-plan.md` | GCP Cloud Run deployment, Vertex AI integration, containerization, and video blueprint | Created 2026-08-31 |
 | `validation-corpus.md` | Real HN/Reddit corpus checks + gap analysis (mind_reading) | — |
-| `worked-example-leadership-delivery.md` | Delivery draft for judging | — |
+| `worked-example-leadership-delivery.md` | Worked example delivery walkthrough | — |
 
 **Archives (never delete, per user directive):** `../_archive/agent-system/2026-08-28_pre-socratic/`, `../_archive/agent-system/2026-08-28_pre-deepening/`, `../_archive/agent-system/2026-08-28_variant-b/`
 
-**Status (2026-08-30):** Full production Python build complete in `src/thinking_partner/` with 11/11 passing tests across classifier, socratic layer, state machine, graph store, ADR diffs, and E2E leadership worked example. Web split-pane UI and CLI demo runners operational.
+**Status (2026-08-31):** Full production Python build complete in `src/thinking_partner/` with 23/23 passing tests across classifier, socratic layer, state machine, graph store, ADR diffs, and E2E leadership worked example. Web split-pane UI and CLI demo runners operational.
 

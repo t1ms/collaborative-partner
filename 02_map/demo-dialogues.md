@@ -1,6 +1,6 @@
 # Demo Dialogues — Ready-Made Test Transcripts
 
-Source: paper §2.2 and §5.3. All examples are framed in professional/decision territory — deliberately safe for judging optics (no therapy framing). Use these as eval cases and demo scripts.
+Source: research §2.2 and §5.3. All examples are grounded in professional and decision territory (executive communication, product strategy, technical leadership). Use these as evaluation cases and test scripts.
 
 ## Meta-Model interventions (§2.2)
 

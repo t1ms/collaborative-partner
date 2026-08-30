@@ -1,38 +1,37 @@
 # Collaborative Thinking Partner
 
-[![Google All Things Agentic Hackathon](https://img.shields.io/badge/Google_Cloud-All_Things_Agentic-4285F4?logo=google-cloud&logoColor=white)](https://cloudonair.withgoogle.com/)
-[![Track](https://img.shields.io/badge/Track-Collaborative_Partner-8B5CF6)](#)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.14-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
 [![Google Gen AI](https://img.shields.io/badge/Model-Gemini_3.7_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 [![Tests](https://img.shields.io/badge/Tests-23%20Passed-brightgreen.svg)](#)
 [![License](https://img.shields.io/badge/License-Apache_2.0_%2F_CC_BY_4.0-blue.svg)](LICENSE)
 
-> **A Socratic Problem-Clarification Engine built for the Google "All Things Agentic" Hackathon.**  
-> Rather than offering generic advice or hallucinating solutions, the Thinking Partner debugs the *structure of problem statements* using formal cognitive grammar (11 Meta-Model patterns), 8 Paul-Elder Socratic moves, an empirical working alliance verbosity dial, and a live mutating Problem Graph.
+> **A Socratic Problem-Clarification Engine.**  
+> Rather than offering generic advice or ungrounded solutions, the Thinking Partner debugs the *structure of problem statements* using formal cognitive grammar (11 Meta-Model patterns), 8 Paul-Elder Socratic moves, an empirical working alliance verbosity dial, and a live mutating Problem Graph.
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ System Overview
 
 ![System Architecture](03_agent-system/architecture-diagram.png)
 
+### How It Works
 
-### Core Innovations & Pillar Alignments
+1. **Guided Socratic Descent**
+   - **5-Phase State Machine (`S0_IDLE → S1_INGEST → S2_CLARIFY → S3_OUTCOME → S4_ANGLE → S5_ECOLOGY → S6_DONE`)** guarantees structured problem progression.
+   - **2-Cycle Deepening Ladder**: Resists shallow closures (*"I don't know"*, *"that's all"*) by escalating through observation splits and metacognitive nudges to reveal load-bearing assumptions.
+   - **Fluid Alliance Voice**: Calibrates turn-level length and reflection using working alliance principles* — synthesizing 2–3 sentence turns that pair verbatim reflection with a single crisp question.
+   - **Ladder of Abstraction Navigation**: Oscillates vertically between high-level strategic intent and concrete ground-level moments without dead-level abstraction.
 
-1. **Interactive Guidance & Fluid Alliance (Pillar 1)**
-   - **5-Phase State Machine (`S0_IDLE → S1_INGEST → S2_CLARIFY → S3_OUTCOME → S4_ANGLE → S5_ECOLOGY → S6_DONE`)**.
-   - **2-Cycle Deepening Ladder**: Never accepts shallow closures (`"I don't know"`, `"that's all"`). Escalate through observation splits and metacognitive nudges to reach cognitive bedrock.
-   - **Empirical Conversational Dial**: Avoids the "scripted bot" trap using turn-level working alliance research (CARE 2026, EMMI 2024, PST-MI 2025, Grice 1975) — synthesizing 2-3 sentence turns that combine verbatim reflection, descent rationale, and a single crisp Socratic question.
-   - **Hayakawa's Ladder of Abstraction**: Fluid vertical oscillation between high-level strategic intent and concrete ground-level moments.
+2. **Live Problem Canvas & Continuous Mutation**
+   - **Architecture Decision Record (ADR) Canvas**: Dynamically mutates on every resolved detection with real-time unified diffs.
+   - **Unstructured Source Grounding**: Ingests transcripts, design briefs, notes, and repository context via `ingest_source`.
 
-2. **Active Data Synthesis & Mutation (Pillar 2)**
-   - Live **Problem Architecture Decision Record (ADR)** canvas mutates on every resolved detection with real-time unified git diffs.
-   - Unstructured source ingestion (`ingest_source`) for transcripts, GitHub repos, and notes.
+3. **Cross-Session Depth Adaptation**
+   - **Persistent Taste & Precedent Bank (`taste_bank.py`)**: Tracks depth and framing preferences across sessions without context rot or prompt stuffing.
+   - **Trajectory-Based Verification**: Validates actual cognitive resolution before marking problem layers resolved.
 
-3. **Self-Improvement & Managing Context (Pillar 3)**
-   - Persistent `TasteProfile` and precedent bank (`taste_bank.py`) tracks user depth preferences across sessions with zero prompt stuffing or context rot.
-   - Trajectory-based evaluation ensures the agent is rewarded for actual cognitive resolution rather than deceptive "looks-complete" text.
+*\*Tuned via empirical findings on therapeutic alliance and conversational verbosity (EMMI 2024, CARE 2026, PST-MI 2025).*
 
 ---
 
@@ -78,9 +77,9 @@ PYTHONPATH=src pytest tests/ -v
 
 ## 📂 Repository Layout (ICM)
 
-- `01_source/` — Canonical research corpus (searchable Markdown `.md` papers), empirical validity references, and Google Cloud ADK / judging guides.
+- `01_source/` — Canonical research corpus (searchable Markdown `.md` papers), empirical validity references, and Google Cloud ADK architecture guides.
 - `02_map/` — Distilled cognitive models, conversational dynamics (alliance dial), and de-branding protocols.
-- `03_agent-system/` — Architecture design specifications, worked examples, implementation plan, and judging rubric mappings.
+- `03_agent-system/` — Architecture design specifications, worked examples, implementation plan, and design rationale.
 - `src/thinking_partner/` — Production Python backend, orchestrator, deterministic classifier, Socratic router, and web UI.
 - `tests/` — Automated test suite reproducing gold-standard evaluation dialogues.
 
@@ -114,7 +113,7 @@ This project builds on established cognitive science, linguistic modeling, empir
 
 ### 4. Google Cloud & ADK Multi-Agent Architecture
 - **Annie Wang, Christina Lin, & Romin Irani**: *Architecting Multi-Agent Teams: Mastering ADK 2* (Graph workflows, Concierge patterns, and Dynamic agent routing).
-- **Christina Lin, Willie, & Darliss Call**: Google Cloud "All Things Agentic" DevRel Workshops & judging alignment guidance.
+- **Christina Lin, Willie, & Darliss Call**: Google Cloud "All Things Agentic" DevRel Workshops & agentic architecture guidance.
 
 ### 5. Repository Architecture & Knowledge Methodology
 - **Interpretable Context Methodology (ICM)**: The repository and agent knowledge workspace are architected using ICM conventions (*folders carry sequencing, hierarchy carries context, files carry state*), establishing verifiable stage gates (`01_source/` $\rightarrow$ `02_map/` $\rightarrow$ `03_agent-system/`) for human-in-the-loop agent reasoning and complete auditability.
@@ -130,10 +129,9 @@ If you build upon this architecture or reference our Socratic Problem-Clarificat
   title={Collaborative Thinking Partner: A Socratic Problem-Clarification Engine with Dual-Horizon Triage and Live Architecture Decision Record Mutation},
   author={Collaborative Thinking Partner Contributors},
   year={2026},
-  howpublished={\url{https://github.com/your-org/collaborative-partner}},
+  howpublished={\url{https://github.com/t1ms/collaborative-partner}},
   note={Built for the Google Cloud All Things Agentic Hackathon}
 }
 ```
 
-
-
+*Originally developed for the Google Cloud "All Things Agentic" Hackathon — an open-source Socratic problem-clarification engine.*

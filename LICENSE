@@ -2,7 +2,7 @@
 
 The **Collaborative Thinking Partner** project is dual-licensed as follows:
 
-1. **Software & Source Code** (`src/`, `code/`, `tests/`, `Dockerfile`):
+1. **Software & Source Code** (`src/`, `tests/`, `Dockerfile`):
    Licensed under the **Apache License, Version 2.0** (the "License"). You may obtain a copy of the License below or at:
    http://www.apache.org/licenses/LICENSE-2.0
 
