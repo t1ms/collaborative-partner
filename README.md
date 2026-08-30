@@ -3,11 +3,11 @@
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.14-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
 [![Google Gen AI](https://img.shields.io/badge/Model-Gemini_3.7_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
-[![Tests](https://img.shields.io/badge/Tests-23%20Passed-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/Tests-27%20Passed-brightgreen.svg)](#)
 [![License](https://img.shields.io/badge/License-Apache_2.0_%2F_CC_BY_4.0-blue.svg)](LICENSE)
 
 > **A Socratic Problem-Clarification Engine.**  
-> Rather than offering generic advice or ungrounded solutions, the Thinking Partner debugs the *structure of problem statements* using formal cognitive grammar (11 Meta-Model patterns), 8 Paul-Elder Socratic moves, an empirical working alliance verbosity dial, and a live mutating Problem Graph.
+> Rather than offering generic advice or ungrounded solutions, the Thinking Partner debugs the *structure of problem statements* using formal cognitive grammar (11 Meta-Model patterns), 8 Paul-Elder Socratic moves, an empirical working alliance verbosity dial, fluid domain-grounded overlays, and a live mutating Problem Graph.
 
 ---
 
@@ -23,11 +23,20 @@
    - **Fluid Alliance Voice**: Calibrates turn-level length and reflection using working alliance principles* — synthesizing 2–3 sentence turns that pair verbatim reflection with a single crisp question.
    - **Ladder of Abstraction Navigation**: Oscillates vertically between high-level strategic intent and concrete ground-level moments without dead-level abstraction.
 
-2. **Live Problem Canvas & Continuous Mutation**
-   - **Architecture Decision Record (ADR) Canvas**: Dynamically mutates on every resolved detection with real-time unified diffs.
+2. **Domain-Grounded Problem Lenses & Extensible Overlays**
+   - **Same Engine, Domain-Grounded Lexicon**: While the state machine and 11-pattern extraction remain universal, lightweight markdown overlay packs (`02_map/overlays/`) tailor the vocabulary, perspectives, and output artifacts per domain:
+     - **Software & SRE Engineering (`se`)**: Telemetry traces, p95/p99 latency, queue depth, database saturation $\to$ generates an *Architecture Decision Record (ADR)*.
+     - **Product & UX Design (`design`)**: Onboarding drop-offs, user mental models, affordances, Figma flows $\to$ generates a *User Journey & Friction Canvas*.
+     - **Engineering Leadership (`leadership`)**: Stakeholder incentives, 1-on-1 feedback, sprint backlog commitments $\to$ generates a *Strategic Outcome & Alignment Record (WFO)*.
+     - **Universal / Baseline (`general`)**: Clean Language fallback for cross-cutting or personal challenges $\to$ generates a *Problem Architecture Record*.
+   - **1-Turn Cross-Domain Blending**: Automatic 2-turn hysteresis and 1-turn cross-domain bridging prevent jarring context flips when an engineer mentions stakeholder pings or a designer mentions backend latency.
+   - **Forbidden Clinical Isolation**: Strictly forbids therapeutic and metacognitive jargon (*"psychological distance"*, *"filtering out"*) from leaking into technical or design workflows.
+
+3. **Live Problem Canvas & Continuous Mutation**
+   - **Domain-Tailored Artifact Canvas**: Dynamically mutates on every resolved detection with real-time unified diffs and domain section headers.
    - **Unstructured Source Grounding**: Ingests transcripts, design briefs, notes, and repository context via `ingest_source`.
 
-3. **Cross-Session Depth Adaptation**
+4. **Cross-Session Depth Adaptation**
    - **Persistent Taste & Precedent Bank (`taste_bank.py`)**: Tracks depth and framing preferences across sessions without context rot or prompt stuffing.
    - **Trajectory-Based Verification**: Validates actual cognitive resolution before marking problem layers resolved.
 
@@ -61,6 +70,7 @@ PYTHONPATH=src python3 -m thinking_partner.demo_scenarios
 PYTHONPATH=src python3 -m uvicorn thinking_partner.server:app --reload --port 8000
 ```
 Open **[http://localhost:8000](http://localhost:8000)** to view the live split-pane UI:
+- **Header:** Live Domain badge (`SE`, `DESIGN`, `LEADERSHIP`, `GENERAL`, with 1-turn blend indicator `SE [↳ LEADERSHIP]`), Phase indicator, and Bedrock Descent gauge.
 - **Left Pane:** Socratic dialogue with real-time badges (pattern, move, cycle, and Bedrock gauge).
 - **Right Pane:** Live mutating ADR canvas, Problem Graph node tree, and audit diff inspector.
 
@@ -68,7 +78,7 @@ Open **[http://localhost:8000](http://localhost:8000)** to view the live split-p
 
 ## 🧪 Testing
 
-Run the full automated test suite (23/23 unit & integration tests):
+Run the full automated test suite (27/27 unit & integration tests):
 ```bash
 PYTHONPATH=src pytest tests/ -v
 ```
@@ -77,11 +87,11 @@ PYTHONPATH=src pytest tests/ -v
 
 ## 📂 Repository Layout (ICM)
 
-- `01_source/` — Canonical research corpus (searchable Markdown `.md` papers), empirical validity references, and Google Cloud ADK architecture guides.
-- `02_map/` — Distilled cognitive models, conversational dynamics (alliance dial), and de-branding protocols.
-- `03_agent-system/` — Architecture design specifications, worked examples, implementation plan, and design rationale.
-- `src/thinking_partner/` — Production Python backend, orchestrator, deterministic classifier, Socratic router, and web UI.
-- `tests/` — Automated test suite reproducing gold-standard evaluation dialogues.
+- `01_source/` — Canonical research corpus (searchable Markdown `.md` papers), empirical validity references, and Google Cloud architecture guide ([`01_source/GCP.md`](01_source/GCP.md)).
+- `02_map/` — Distilled cognitive models, conversational dynamics (alliance dial), and domain overlay packs ([`02_map/overlays/`](02_map/overlays/)).
+- `03_agent-system/` — Architecture design specifications, worked examples, implementation plan, and GCP Cloud Run deployment runbook.
+- `src/thinking_partner/` — Production Python backend, orchestrator, deterministic classifier, Socratic router, domain overlay loader, and web UI.
+- `tests/` — Automated test suite reproducing gold-standard evaluation dialogues and domain fluidity test matrix.
 
 ---
 
