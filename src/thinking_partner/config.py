@@ -20,5 +20,13 @@ USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "false").lower() in ("true", "1", "yes"
 
 # Persistence mode: 'firestore' or 'memory' (with automatic JSON file checkpointing)
 STORAGE_MODE = os.getenv("STORAGE_MODE", "memory")
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Domain Switch & Fluidity Dials
+DOMAIN_SWITCH_THRESHOLD = float(os.getenv("DOMAIN_SWITCH_THRESHOLD", "0.60"))
+DOMAIN_MARGIN = float(os.getenv("DOMAIN_MARGIN", "0.15"))
+DOMAIN_HYSTERESIS = int(os.getenv("DOMAIN_HYSTERESIS", "2"))
+DOMAIN_BLEND = os.getenv("DOMAIN_BLEND", "true").lower() in ("true", "1", "yes")
+OVERLAY_DIR = Path(__file__).resolve().parent.parent.parent / "02_map" / "overlays"
+

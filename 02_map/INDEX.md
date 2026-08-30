@@ -13,6 +13,15 @@ Distilled modules from foundational cognitive modeling and empirical conversatio
 | [`VERIFICATION.md`](VERIFICATION.md) | **Witkowski (2010)**; **Passmore & Rowson (2018)**; **Sturt et al. (2012)** | De-branding protocol, empirical boundaries, and scientific defensibility. |
 | [`demo-dialogues.md`](demo-dialogues.md) | **Bandler (1975)** transcripts; **Paul & Elder (2006)** Socratic cases | Gold-standard test cases and evaluation dialogue scripts. |
 
+### Domain Overlay Packs (`02_map/overlays/`)
+
+| Overlay Pack | Domain Scope | Grounded Vocabulary & Perspectives | Primary Artifact Output |
+|---|---|---|---|
+| [`overlays/se.md`](overlays/se.md) | Software & SRE Engineering | Telemetry traces, p95/p99 latency, queue depth, failover | Architecture Decision Record (ADR) |
+| [`overlays/design.md`](overlays/design.md) | Product & UX Design | User journey, onboarding drop-off, affordances, Figma flow | User Journey & Friction Canvas |
+| [`overlays/leadership.md`](overlays/leadership.md) | Engineering Leadership & Alignment | Stakeholder incentives, 1-on-1s, roadmap commitments | Strategic Outcome & Alignment Record (WFO) |
+| [`overlays/general.md`](overlays/general.md) | General / Baseline | Clean Language baseline, objective observations | Problem Architecture Record |
+
 ---
 
 **Mapping Status:** Complete. All models de-branded and strictly mapped to peer-reviewed cognitive science, Chomskyan linguistics, and empirical conversational alliance research.

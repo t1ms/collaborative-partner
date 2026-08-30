@@ -78,6 +78,8 @@ class DetectionNode(BaseModel):
     surface: str  # verbatim phrase
     confidence: float = 1.0
     layer: LayerType = LayerType.DOWNSTREAM_SYMPTOM
+    domain_hint: Optional[str] = None
+    domain_confidence: Optional[float] = None
     resolved: bool = False
     resolved_by_answer_id: Optional[str] = None
     deepen_count: int = 0
@@ -94,6 +96,8 @@ class QuestionNode(BaseModel):
     style: str = "socratic"
     deepen_cycle: int = 0  # 0: base question, 1..2: deepening descents
     technique: Optional[DeepeningTechnique] = None
+    domain: Optional[str] = None
+    blend_with: Optional[str] = None
     created_at: float = Field(default_factory=time.time)
 
 
@@ -147,6 +151,7 @@ class ArtifactVersion(BaseModel):
     content: str  # Markdown ADR / Canvas
     diff: str = ""  # diff from previous version
     trigger_node_id: Optional[str] = None
+    domain: str = "general"
     created_at: float = Field(default_factory=time.time)
 
 
@@ -176,6 +181,9 @@ class GraphEdge(BaseModel):
 class ProblemGraph(BaseModel):
     session_id: str = Field(default_factory=lambda: f"ses_{uuid.uuid4().hex[:8]}")
     current_phase: StatePhase = StatePhase.S0_IDLE
+    current_domain: str = "general"
+    domain_history: List[str] = Field(default_factory=list)
+    blend_with: Optional[str] = None
     utterances: List[UtteranceNode] = Field(default_factory=list)
     detections: List[DetectionNode] = Field(default_factory=list)
     questions: List[QuestionNode] = Field(default_factory=list)

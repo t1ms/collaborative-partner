@@ -104,6 +104,8 @@ def chat(req: ChatRequest):
         "session_id": updated_graph.session_id,
         "response": response_text,
         "current_phase": updated_graph.current_phase,
+        "current_domain": updated_graph.current_domain,
+        "blend_with": updated_graph.blend_with,
         "active_detection_id": updated_graph.active_detection_id,
         "graph": updated_graph,
         "latest_artifact": updated_artifact,

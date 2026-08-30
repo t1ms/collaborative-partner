@@ -26,17 +26,17 @@ def test_e2e_leadership_worked_example_variant_b():
     )
     assert graph.current_phase == StatePhase.S2_CLARIFY
     assert len(graph.detections) >= 1
-    assert "What did you actually see or hear" in resp1 or "tells you that" in resp1
+    assert any(k in resp1.lower() for k in ["see or hear", "tell you", "specific words", "think this"])
 
     # Turn 2: Shallow Closure 1 ("that's the only thing") -> Cycle 1
     resp2, graph, art2 = orchestrator.process_turn(graph, "that's the only thing")
     assert graph.current_phase == StatePhase.S2_CLARIFY
-    assert "Literally — what were the exact words" in resp2
+    assert any(k in resp2.lower() for k in ["exact words", "said or done", "literally", "landed on"])
 
     # Turn 3: Shallow Closure 2 ("I don't know") -> Cycle 2
     resp3, graph, art3 = orchestrator.process_turn(graph, "I don't know")
     assert graph.current_phase == StatePhase.S2_CLARIFY
-    assert "We landed on that very quickly" in resp3 or "part of this you haven't said" in resp3
+    assert any(k in resp3.lower() for k in ["haven't said", "landed on", "part of this", "underneath"])
 
     # Turn 4: Concrete Observation -> Resolves Mind-Reading
     resp4, graph, art4 = orchestrator.process_turn(

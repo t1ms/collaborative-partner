@@ -98,6 +98,7 @@ async function createNewSession() {
       </div>
     `;
     updatePhaseBadge("S0_IDLE");
+    updateDomainBadge("GENERAL", null);
     depthGaugeFill.style.width = "0%";
     adrContent.innerHTML = `
       <div class="empty-state">
@@ -145,10 +146,11 @@ async function handleSendMessage(e) {
     // Render agent response
     appendAgentMessage(data.response, data.graph);
 
-    // Update Right Pane (ADR, Graph, Diff)
+    // Update Right Pane (ADR, Graph, Diff, Badges)
     updateArtifactView(data.latest_artifact);
     updateGraphView(data.graph);
     updatePhaseBadge(data.current_phase);
+    updateDomainBadge(data.current_domain, data.blend_with);
   } catch (err) {
     console.error("Chat error:", err);
     appendAgentMessage("An error occurred during processing. Please try again.", null);
@@ -283,6 +285,22 @@ function updatePhaseBadge(phase) {
     currentPhaseBadge.style.color = "var(--accent-indigo)";
   } else {
     currentPhaseBadge.style.color = "var(--accent-cyan)";
+  }
+}
+
+function updateDomainBadge(domain, blendWith) {
+  const badge = document.getElementById("currentDomainBadge");
+  if (!badge) return;
+  const dom = (domain || "general").toUpperCase();
+  if (blendWith) {
+    badge.textContent = `${dom} [↳ ${blendWith.toUpperCase()}]`;
+    badge.style.color = "var(--accent-amber)";
+  } else {
+    badge.textContent = dom;
+    if (dom === "SE") badge.style.color = "#38bdf8";
+    else if (dom === "DESIGN") badge.style.color = "#f472b6";
+    else if (dom === "LEADERSHIP") badge.style.color = "#a78bfa";
+    else badge.style.color = "#94a3b8";
   }
 }
 

@@ -23,6 +23,7 @@ Built on ICM: folders carry sequencing, hierarchy carries context, files carry s
 | designing/building agent | `03_agent-system/CONTEXT.md` | human checks design alignment |
 | modifying existing design files | create new version or move previous to `_archive/` | verify active file |
 | referencing past design variants | check `_archive/agent-system/` | return with context to active work |
+| configuring / deploying to GCP | `01_source/GCP.md` | pre-flight verification & runbook |
 | asked for status | scan `03_agent-system/INDEX.md` | report current build state |
 
 ## Rules

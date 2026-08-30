@@ -69,7 +69,7 @@ Instead of outputting rigid, formulaic blocks, the orchestrator instructs Gemini
 
 ---
 
-## 4. Operational Generation Configuration (Gemini Dial)
+## 4. Operational Generation Configuration (Gemini Dial) & Domain Fluidity
 
 To enforce this natural, high-alliance balance in the codebase:
 
@@ -81,7 +81,18 @@ GENERATION_CONFIG = {
     "max_output_tokens": 160,     # Strict brevity ceiling (prevents monologue bloat)
     "stop_sequences": ["\n\n\n"],
 }
+
+# Domain Fluidity Dials
+DOMAIN_SWITCH_THRESHOLD = 0.60    # Confidence barrier to trigger cross-domain jump
+DOMAIN_MARGIN = 0.15              # Required score lead over second candidate
+DOMAIN_HYSTERESIS = 2             # 2-turn confirmation before hard domain switch
+DOMAIN_BLEND = True               # 1-turn cross-domain vocabulary blend during jumps
 ```
+
+### Domain Fluidity & Vocabulary Grounding Rules
+- **Same Engine, Domain-Grounded Lexicon:** The core 11-pattern extraction and 5-phase state machine remain immutable. Domains (`se`, `design`, `leadership`, `general`) act as lightweight per-turn vocabulary and perspective lenses.
+- **1-Turn Blend on Jump:** When a user momentarily references another domain (e.g., SE user bringing in stakeholder politics), the agent stays anchored in the primary domain while incorporating a single-sentence cross-domain bridge without flickering.
+- **Forbidden Lexicon Isolation:** Explicitly forbids clinical/therapy abstractions (`psychological distance`, `filtering out`, `metacognitive labels`) from polluting technical or design contexts.
 
 ### Prompt Guardrail Directives
 1. **Speak like a razor-sharp collaborator in a room with a whiteboard, not an automated therapist or scripted bot.**

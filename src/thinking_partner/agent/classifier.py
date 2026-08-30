@@ -102,6 +102,121 @@ PATTERNS_REGEX = [
 ]
 
 
+from typing import List, Optional, Tuple, Dict, Any
+from pydantic import BaseModel, Field
+from .models import PatternType, LayerType, DetectionNode
+from .overlays import load_domain_packs, get_domain_pack, DomainPack
+from ..config import DOMAIN_SWITCH_THRESHOLD, DOMAIN_MARGIN, DOMAIN_HYSTERESIS, DOMAIN_BLEND
+
+
+class DomainClassificationResult(BaseModel):
+    domain: str = "general"
+    blend_with: Optional[str] = None
+    confidence: float = 0.50
+    scores: Dict[str, float] = Field(default_factory=dict)
+    candidate: str = "general"
+
+
+def classify_domain(
+    text: str,
+    prev_domain: str = "general",
+    domain_history: Optional[List[str]] = None,
+    source_type: Optional[str] = None,
+) -> DomainClassificationResult:
+    """
+    Scores domain keywords, applies ingest source boost and hysteresis,
+    and returns (domain, blend_with, confidence, scores).
+    """
+    history = list(domain_history or [])
+    packs = load_domain_packs()
+    text_lower = text.lower()
+
+    raw_scores: Dict[str, float] = {"se": 0.0, "design": 0.0, "leadership": 0.0}
+
+    # Count keyword matches with word boundaries
+    for dom_key in ["se", "design", "leadership"]:
+        pack = packs.get(dom_key)
+        if not pack:
+            continue
+        hit_count = 0
+        for kw in pack.keywords:
+            # Escape regex special characters in keywords
+            kw_regex = r"\b" + re.escape(kw) + r"\b"
+            if re.search(kw_regex, text_lower):
+                hit_count += 1
+        raw_scores[dom_key] = float(hit_count)
+
+    # Ingest source boost
+    if source_type:
+        st = source_type.lower()
+        if any(k in st for k in ["repo", "github", "code", "log", "metrics", "telemetry", "trace"]):
+            raw_scores["se"] += 2.0
+        elif any(k in st for k in ["figma", "design", "wireframe", "prototype", "user", "ux"]):
+            raw_scores["design"] += 2.0
+        elif any(k in st for k in ["1-on-1", "slack", "meeting", "roadmap", "stakeholder", "exec"]):
+            raw_scores["leadership"] += 2.0
+
+    # Apply tiny previous domain bias
+    if prev_domain in raw_scores and raw_scores[prev_domain] > 0:
+        raw_scores[prev_domain] += 0.05
+
+    # Sort scores descending
+    sorted_scores = sorted(raw_scores.items(), key=lambda x: x[1], reverse=True)
+    top_dom, top_score = sorted_scores[0]
+    second_score = sorted_scores[1][1] if len(sorted_scores) > 1 else 0.0
+
+    # Calculate confidence
+    if top_score == 0.0:
+        candidate = "general"
+        confidence = 0.50
+    else:
+        candidate = top_dom
+        confidence = min(0.99, 0.40 + 0.15 * top_score)
+
+    # Determine winning domain with margin check (requires 2+ keyword hits or source boost to avoid single-word false positives)
+    has_sufficient_signal = (top_score >= 2.0) or (top_score >= 1.0 and bool(source_type))
+    if confidence >= DOMAIN_SWITCH_THRESHOLD and (top_score - second_score >= DOMAIN_MARGIN) and has_sufficient_signal:
+        winning_candidate = candidate
+    else:
+        winning_candidate = prev_domain
+
+    # Hysteresis & Blending State Resolution
+    result_domain = prev_domain
+    blend_with: Optional[str] = None
+
+    if prev_domain == "general" or not prev_domain:
+        # Cold start: immediate lock if confident candidate found
+        result_domain = winning_candidate
+        blend_with = None
+    elif winning_candidate == prev_domain:
+        # Stable in current domain
+        result_domain = prev_domain
+        blend_with = None
+    elif winning_candidate == "general":
+        # Neutral input: retain active domain
+        result_domain = prev_domain
+        blend_with = None
+    else:
+        # In-flight domain jump attempt
+        # Check if the previous candidate in history was also this candidate (2-turn confirmation)
+        if history and history[-1] == winning_candidate:
+            # Confirmed 2nd consecutive hit -> hard switch
+            result_domain = winning_candidate
+            blend_with = None
+        else:
+            # Single-turn jump -> stay in prev_domain with 1-turn blend
+            result_domain = prev_domain
+            blend_with = winning_candidate if DOMAIN_BLEND else None
+
+    return DomainClassificationResult(
+        domain=result_domain,
+        blend_with=blend_with,
+        confidence=confidence,
+        scores=raw_scores,
+        candidate=winning_candidate,
+    )
+
+
 class MetaModelClassifier:
     """Classifies user utterances into Meta-Model detections with confidence and layer tagging."""
 
@@ -117,11 +232,13 @@ class MetaModelClassifier:
                 return LayerType.UPSTREAM_STATE
         return LayerType.DOWNSTREAM_SYMPTOM
 
-    def classify(self, utterance_text: str, utterance_id: str) -> List[DetectionNode]:
-        """Deterministic regex-based classification with dual-horizon layer tagging."""
+    def classify(self, utterance_text: str, utterance_id: str, prev_domain: str = "general") -> List[DetectionNode]:
+        """Deterministic regex-based classification with dual-horizon layer tagging and domain hint."""
         detections: List[DetectionNode] = []
         text_lower = utterance_text.lower()
         overall_layer = self.determine_layer(utterance_text)
+
+        domain_res = classify_domain(utterance_text, prev_domain=prev_domain)
 
         # Check all pattern rules
         for pattern_type, regex_pattern, default_conf in PATTERNS_REGEX:
@@ -142,6 +259,8 @@ class MetaModelClassifier:
                     surface=surface,
                     confidence=default_conf,
                     layer=det_layer,
+                    domain_hint=domain_res.domain,
+                    domain_confidence=domain_res.confidence,
                 )
                 detections.append(detection)
 
