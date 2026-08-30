@@ -1,0 +1,16 @@
+# Exclude local environment and non-runtime files from container build
+.venv/
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.pytest_cache/
+_archive/
+scratch/
+tests/
+01_source/
+02_map/
+03_agent-system/
+.env
+.env.*

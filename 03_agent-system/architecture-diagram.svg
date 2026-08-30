@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0d14"/>
+      <stop offset="100%" stop-color="#121824"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a2234"/>
+      <stop offset="100%" stop-color="#141a29"/>
+    </linearGradient>
+    <linearGradient id="geminiGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4285F4"/>
+      <stop offset="50%" stop-color="#9B72CF"/>
+      <stop offset="100%" stop-color="#D96570"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="100%" stop-color="#4facfe"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="680" rx="16" fill="url(#bgGrad)" stroke="#232f48" stroke-width="2"/>
+
+  <!-- Header -->
+  <text x="600" y="50" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="1">COLLABORATIVE THINKING PARTNER — SYSTEM ARCHITECTURE</text>
+  <text x="600" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" fill="#94a3b8" text-anchor="middle">Google Cloud ADK 2 Multi-Agent Orchestration • Gemini 3.7 Flash • Live ADR Mutation Canvas</text>
+
+  <!-- Column 1: Input & Context Ingestion -->
+  <g transform="translate(40, 110)">
+    <rect width="240" height="420" rx="12" fill="url(#cardGrad)" stroke="#2d3a54" stroke-width="1.5"/>
+    <rect width="240" height="40" rx="12" fill="#202c42"/>
+    <text x="120" y="25" font-family="sans-serif" font-size="14" font-weight="700" fill="#38bdf8" text-anchor="middle">1. INPUT &amp; INGESTION</text>
+    
+    <!-- Box: User Dialogue -->
+    <rect x="20" y="60" width="200" height="70" rx="8" fill="#111827" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="120" y="88" font-family="sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">User Dialogue</text>
+    <text x="120" y="110" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">Problem statements &amp; claims</text>
+
+    <!-- Box: Source Ingest Tool -->
+    <rect x="20" y="150" width="200" height="70" rx="8" fill="#111827" stroke="#374151" stroke-width="1"/>
+    <text x="120" y="178" font-family="sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">ingest_source Tool</text>
+    <text x="120" y="200" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">Raw transcripts, notes, code</text>
+
+    <!-- Box: Dual-Horizon Tagger -->
+    <rect x="20" y="240" width="200" height="80" rx="8" fill="#111827" stroke="#8b5cf6" stroke-width="1"/>
+    <text x="120" y="268" font-family="sans-serif" font-size="13" font-weight="600" fill="#c084fc" text-anchor="middle">Dual-Horizon Tagger</text>
+    <text x="120" y="290" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">Upstream State (burnout)</text>
+    <text x="120" y="306" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">vs. Downstream Symptom</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 280 320 L 330 320" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)" stroke-dasharray="4,4"/>
+
+  <!-- Column 2: Core ADK Orchestrator & Cognitive Engine -->
+  <g transform="translate(340, 110)">
+    <rect width="400" height="520" rx="12" fill="url(#cardGrad)" stroke="#4285f4" stroke-width="2"/>
+    <rect width="400" height="40" rx="12" fill="#1e3a8a"/>
+    <text x="200" y="25" font-family="sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">2. ADK ORCHESTRATOR &amp; COGNITIVE ENGINE</text>
+
+    <!-- 5-Phase State Machine -->
+    <rect x="20" y="55" width="360" height="75" rx="8" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="200" y="78" font-family="sans-serif" font-size="12" font-weight="700" fill="#60a5fa" text-anchor="middle">5-Phase State Machine (S0 ➔ S6)</text>
+    <text x="200" y="100" font-family="sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">S1: Ingest ➔ S2: Clarify ➔ S3: Outcome (WFO) ➔ S4: Angle ➔ S5: Done</text>
+    <text x="200" y="118" font-family="sans-serif" font-size="10" fill="#34d399" text-anchor="middle">TOTE Feedback Loops (Miller et al. 1960)</text>
+
+    <!-- Meta-Model Classifier -->
+    <rect x="20" y="145" width="360" height="75" rx="8" fill="#0f172a" stroke="#a855f7" stroke-width="1.5"/>
+    <text x="200" y="168" font-family="sans-serif" font-size="12" font-weight="700" fill="#c084fc" text-anchor="middle">11 Meta-Model Classifier &amp; Priority Queue</text>
+    <text x="200" y="190" font-family="sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Distortions (Cause-Effect, Mind-Reading) ➔ Deletions ➔ Modals</text>
+    <text x="200" y="208" font-family="sans-serif" font-size="10" fill="#a78bfa" text-anchor="middle">Strict Clean Language Verbatim Word Reuse (David Grove)</text>
+
+    <!-- Socratic Router & Deepening Ladder -->
+    <rect x="20" y="235" width="360" height="95" rx="8" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="200" y="258" font-family="sans-serif" font-size="12" font-weight="700" fill="#fbbf24" text-anchor="middle">Paul-Elder Socratic Router &amp; Deepening Ladder</text>
+    <text x="200" y="280" font-family="sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">2-Cycle Escalation: Observation Split ➔ Metacognitive Nudge</text>
+    <text x="200" y="298" font-family="sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Bedrock Closure Detector (B(S) Score &gt;= 0.70)</text>
+    <text x="200" y="316" font-family="sans-serif" font-size="10" fill="#fcd34d" text-anchor="middle">Working Alliance Dial: Rationale Brevity (CARE 2026, EMMI 2024)</text>
+
+    <!-- Gemini 3.7 Flash Layer -->
+    <rect x="20" y="345" width="360" height="85" rx="8" fill="url(#geminiGrad)" opacity="0.15"/>
+    <rect x="20" y="345" width="360" height="85" rx="8" fill="none" stroke="url(#geminiGrad)" stroke-width="2"/>
+    <text x="200" y="375" font-family="sans-serif" font-size="14" font-weight="800" fill="#ffffff" text-anchor="middle">Google Gemini 3.7 Flash</text>
+    <text x="200" y="398" font-family="sans-serif" font-size="11" fill="#e2e8f0" text-anchor="middle">Vertex AI &amp; GenAI SDK • Empathic Synthesis (2-3 sentences)</text>
+    <text x="200" y="416" font-family="sans-serif" font-size="11" fill="#e2e8f0" text-anchor="middle">Ladder of Abstraction Navigation • No-LaTeX Invariant</text>
+    
+    <!-- Gen AI Eval -->
+    <rect x="20" y="445" width="360" height="55" rx="8" fill="#0f172a" stroke="#10b981" stroke-width="1"/>
+    <text x="200" y="468" font-family="sans-serif" font-size="11" font-weight="700" fill="#34d399" text-anchor="middle">Vertex Gen AI Evaluation &amp; Trajectory Scoring</text>
+    <text x="200" y="488" font-family="sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">Evaluates true cognitive resolution vs. superficial completion</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <path d="M 740 320 L 790 320" stroke="#a855f7" stroke-width="2.5" marker-end="url(#arrow)" stroke-dasharray="4,4"/>
+
+  <!-- Column 3: Persistence & Live Mutation Artifacts -->
+  <g transform="translate(800, 110)">
+    <rect width="360" height="520" rx="12" fill="url(#cardGrad)" stroke="#2d3a54" stroke-width="1.5"/>
+    <rect width="360" height="40" rx="12" fill="#202c42"/>
+    <text x="180" y="25" font-family="sans-serif" font-size="14" font-weight="700" fill="#34d399" text-anchor="middle">3. PERSISTENCE &amp; LIVE ARTIFACTS</text>
+
+    <!-- Persistent Problem Graph -->
+    <rect x="20" y="55" width="320" height="120" rx="8" fill="#111827" stroke="#10b981" stroke-width="1.5"/>
+    <text x="180" y="80" font-family="sans-serif" font-size="13" font-weight="700" fill="#34d399" text-anchor="middle">Persistent Problem Graph</text>
+    <text x="180" y="105" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Utterance, Detection, Question, Answer Nodes</text>
+    <text x="180" y="125" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• WFO Predicates (P1..P6) &amp; Constraint Nodes</text>
+    <text x="180" y="145" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Firestore Cloud Backend / Local JSON Store</text>
+    <text x="180" y="163" font-family="sans-serif" font-size="10" fill="#6ee7b7" text-anchor="middle">Cross-Session Taste Bank (Precedent Adaptation)</text>
+
+    <!-- Live Mutating ADR Canvas -->
+    <rect x="20" y="190" width="320" height="135" rx="8" fill="#111827" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="180" y="215" font-family="sans-serif" font-size="13" font-weight="700" fill="#f472b6" text-anchor="middle">Live ADR Canvas &amp; Unified Diffs</text>
+    <text x="180" y="240" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Mutates Architecture Decision Record live</text>
+    <text x="180" y="260" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Emits real-time Unified Git Diffs (+/-)</text>
+    <text x="180" y="280" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Tracks Status: PROPOSED ➔ RESOLVED</text>
+    <text x="180" y="300" font-family="sans-serif" font-size="10" fill="#fbcfe8" text-anchor="middle">Pillar 2 Differentiator: Active State Co-Creation</text>
+
+    <!-- Split-Pane Web UI -->
+    <rect x="20" y="340" width="320" height="150" rx="8" fill="#111827" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="180" y="365" font-family="sans-serif" font-size="13" font-weight="700" fill="#38bdf8" text-anchor="middle">Interactive Split-Pane Web UI</text>
+    <text x="180" y="390" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Left: Socratic dialogue + Bedrock gauge</text>
+    <text x="180" y="410" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Right: Live ADR Canvas, Diff View &amp; Node Tree</text>
+    <text x="180" y="430" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Fast REST &amp; SSE Endpoints (FastAPI + Uvicorn)</text>
+    <text x="180" y="450" font-family="sans-serif" font-size="11" fill="#9ca3af" text-anchor="middle">• Deployed to Google Cloud Run (Port 8080)</text>
+    <text x="180" y="475" font-family="sans-serif" font-size="10" fill="#bae6fd" text-anchor="middle">Auditable Proof of Work on Every Turn</text>
+  </g>
+
+  <!-- Marker definition -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8" />
+    </marker>
+  </defs>
+</svg>

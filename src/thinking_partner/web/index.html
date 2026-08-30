@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collaborative Thinking Partner | Socratic Problem Clarification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-badge">GCP / ADK</div>
+        <h1>Thinking Partner <span>// Problem Clarification Engine</span></h1>
+      </div>
+      <div class="header-controls">
+        <div class="phase-indicator" id="phaseIndicator">
+          <span class="phase-label">PHASE:</span>
+          <span class="phase-value" id="currentPhaseBadge">S0_IDLE</span>
+        </div>
+        <div class="depth-gauge" title="Cognitive Bedrock Descent Depth">
+          <span class="gauge-label">BEDROCK DESCENT:</span>
+          <div class="gauge-bar">
+            <div class="gauge-fill" id="depthGaugeFill" style="width: 0%;"></div>
+          </div>
+        </div>
+        <button id="newSessionBtn" class="btn btn-secondary">New Session</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Split-Pane -->
+    <main class="workspace-grid">
+      <!-- Left Pane: Socratic Dialogue -->
+      <section class="pane dialogue-pane">
+        <div class="pane-header">
+          <h2>Interactive Dialogue</h2>
+          <div class="scenario-selector">
+            <label for="scenarioSelect">Load Demo Case:</label>
+            <select id="scenarioSelect">
+              <option value="">-- Choose a scenario --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="chat-history" id="chatHistory">
+          <div class="message-card agent-card intro-card">
+            <div class="message-header">
+              <span class="sender-tag">Thinking Partner</span>
+              <span class="badge badge-subtle">Method: Socratic</span>
+            </div>
+            <div class="message-body">
+              <p><strong>Welcome.</strong> I do not give generic advice or canned solutions. Instead, we deconstruct the assumptions and distortions in your problem statement together.</p>
+              <p class="bedrock-hint"><em>"Problems stack — each one rests on an assumption beneath it. Let's descend together to the load-bearing one."</em></p>
+              <p>Type what's on your mind below or select a sample scenario above to begin.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-area">
+          <form id="chatForm">
+            <textarea id="messageInput" placeholder="Describe the problem, tension, or decision you're facing..." rows="2" required></textarea>
+            <div class="input-actions">
+              <span class="hint-text">Press <strong>Enter</strong> to send, <strong>Shift+Enter</strong> for newline</span>
+              <button type="submit" id="sendBtn" class="btn btn-primary">
+                <span>Send</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Right Pane: Live Problem Graph & ADR Artifact -->
+      <section class="pane artifact-pane">
+        <div class="pane-header">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="adrTab">Live ADR Canvas</button>
+            <button class="tab-btn" data-tab="graphTab">Problem Graph (<span id="nodeCount">0</span> nodes)</button>
+            <button class="tab-btn" data-tab="diffTab">Audit Diff (<span id="versionBadge">v0</span>)</button>
+          </div>
+          <span class="live-status-pill">● LIVE MUTATION</span>
+        </div>
+
+        <!-- Tab 1: Live ADR Canvas -->
+        <div class="tab-content active" id="adrTab">
+          <div class="adr-container markdown-body" id="adrContent">
+            <div class="empty-state">
+              <p>No Problem Architecture Record generated yet.</p>
+              <p class="sub">Send your first message to initialize the live ADR canvas.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Graph Node Inspector -->
+        <div class="tab-content" id="graphTab">
+          <div class="graph-inspector">
+            <div class="graph-stats">
+              <div class="stat-box"><span class="num" id="statDetections">0</span><span>Detections</span></div>
+              <div class="stat-box"><span class="num" id="statResolved">0</span><span>Peeled Layers</span></div>
+              <div class="stat-box"><span class="num" id="statDeepen">0</span><span>Deepening Cycles</span></div>
+              <div class="stat-box"><span class="num" id="statWfo">0/5</span><span>WFO Predicates</span></div>
+            </div>
+            <div class="node-tree" id="nodeTree">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Diff Inspector -->
+        <div class="tab-content" id="diffTab">
+          <div class="diff-container">
+            <pre class="diff-view" id="diffContent"><code>// Live mutation diffs will stream here on each turn...</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

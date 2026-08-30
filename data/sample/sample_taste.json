@@ -1,0 +1,14 @@
+{
+  "user_id": "sample_user",
+  "preferred_depth": 2,
+  "tolerance_for_ambiguity": "low",
+  "directness_score": 0.85,
+  "resolved_predicates_count": 6,
+  "historical_precedents": [
+    {
+      "pattern": "mind_reading",
+      "successful_technique": "observation_split",
+      "resolution_turns": 2
+    }
+  ]
+}

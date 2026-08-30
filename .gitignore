@@ -1,0 +1,84 @@
+# ==============================================================================
+# Git Ignore Rules — Collaborative Thinking Partner
+# ==============================================================================
+
+# 1. Environment & Secrets (CRITICAL: Never commit .env or private keys)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+
+# 2. Python Environment, Bytecode & Caches
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 3. Testing, Coverage & Linters
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.ruff_cache/
+.mypy_cache/
+
+# 4. Agent Tooling, Scratch & Hermes Caches
+.hermes/
+.agent/
+scratch/
+
+# 5. Raw Web Scrapes & Heavy Scrape Dumps (Kept offline in _archive)
+*_raw.json
+_hn_raw.json
+_reddit_raw.json
+
+# 6. Persistent Local Data & Runtime User Session Traces (Zero PII on GitHub)
+data/sessions/
+data/graphs/
+data/tastes/
+data/*.json
+src/data/sessions/
+src/data/graphs/
+src/data/tastes/
+src/data/*.json
+!data/.gitkeep
+!data/README.md
+!data/sample/
+!data/sample/*.json
+
+# 7. Binary PDFs (Keep markdown .md versions only for lightweight, searchable repo)
+*.pdf
+01_source/research/*.pdf
+*.docx
+
+# 8. Cold Storage Archive (Local only; historical drafts remain in git log)
+_archive/
+
+# 9. IDE, Editor & OS Artifacts
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

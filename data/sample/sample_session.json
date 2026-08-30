@@ -1,0 +1,36 @@
+{
+  "session_id": "ses_sample_leadership_demo",
+  "created_at": "2026-08-31T00:00:00Z",
+  "current_phase": "S3_OUTCOME",
+  "deepen_cycle": 1,
+  "nodes": {
+    "utterance_0": {
+      "type": "UtteranceNode",
+      "text": "My team doesn't think I'm leadership material because I didn't push back on the timeline.",
+      "layer": "downstream_symptom"
+    },
+    "detection_0": {
+      "type": "DetectionNode",
+      "pattern": "mind_reading",
+      "surface_text": "doesn't think",
+      "resolved": true
+    },
+    "question_0": {
+      "type": "QuestionNode",
+      "intent": "GROUND_EVIDENCE",
+      "text": "When you say they don't think you're leadership material, what specific interaction or feedback gave you that impression?",
+      "cycle": 0
+    },
+    "outcome_0": {
+      "type": "OutcomePredicateNode",
+      "predicate_key": "P1_POSITIVE_GOAL",
+      "predicate_text": "Lead the Q4 architecture review directly with executive stakeholders",
+      "verified": true
+    }
+  },
+  "edges": [
+    {"from_node": "utterance_0", "to_node": "detection_0", "edge_type": "DERIVES"},
+    {"from_node": "detection_0", "to_node": "question_0", "edge_type": "PROBES"},
+    {"from_node": "question_0", "to_node": "outcome_0", "edge_type": "RESOLVES_TO"}
+  ]
+}

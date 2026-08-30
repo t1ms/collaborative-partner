@@ -1,0 +1,70 @@
+Collaborative Thinking Partner
+Copyright 2026 Collaborative Thinking Partner Contributors
+
+==============================================================================
+RESEARCH CORPUS & SCIENTIFIC LINEAGE
+==============================================================================
+
+This project's cognitive state machine, deterministic question router, and
+conversational alliance dynamics trace directly to the following foundational research:
+
+1. Cognitive Architecture & Linguistic Modeling:
+   - Bandler, R., & Grinder, J. (1975). The Structure of Magic I: A Book About
+     Language and Therapy. Science and Behavior Books. (Foundational Meta-Model
+     linguistic distortion taxonomy: Deletions, Distortions, Generalizations).
+   - Bandler, R., & Grinder, J. (1976). The Structure of Magic II. Science and
+     Behavior Books.
+   - Dilts, R. (1999). Sleight of Mouth: The Magic of Conversational Belief Change.
+     Meta Publications. (Semantic reframing patterns and Meta-Mirror systemic 4th
+     perceptual position, 1988–1992).
+   - Grinder, J., & DeLozier, J. (1987). Turtles All the Way Down: Prerequisites to
+     Personal Genius. Quantum Leap. (1st, 2nd, and 3rd Perceptual Positions).
+   - Cameron-Bandler, L. (1978). They Lived Happily Ever After. Meta Publications.
+     (Codification of Positive Intent and outcome questioning sequences).
+
+2. Empirical Validation, Socratic Inquiry & Clean Language:
+   - Witkowski, T. (2010). Thirty-five years of research on Neuro-Linguistic
+     Programming. Polish Psychological Bulletin, 41(2), 58–66. (Empirical boundary
+     setting and de-branding protocol).
+   - Passmore, J., & Rowson, T. (2018). Neuro-linguistic programming: a critical
+     review of NLP research and the application of NLP for coaching/mentoring.
+   - Sturt, J., et al. (2012). Neuro-linguistic programming: a systematic review of
+     the effects on socioemotional outcomes. British Journal of General Practice.
+   - Paul, R., & Elder, L. (2006). Critical Thinking: Tools for Taking Charge of
+     Your Learning and Your Life (2nd ed.). Prentice Hall. (8-move Socratic Taxonomy).
+   - Grove, D. J., & Panzer, C. W. (1989). Resolving Traumatic Memories: Metaphors
+     and Symbols in Psychotherapy. Irvington Publishers. (Clean Language invariant:
+     verbatim user word reuse without outside metaphor contamination).
+   - Miller, G. A., Galanter, E., & Pribram, K. H. (1960). Plans and the Structure
+     of Behavior. Henry Holt & Co. (TOTE cybernetic feedback loops).
+   - Locke, E. A., & Latham, G. P. (2002). Building a Practically Useful Theory of
+     Goal Setting and Task Motivation. American Psychologist, 57(9), 705–717.
+     (Well-Formed Outcome predicate verification).
+
+3. Working Alliance, Conversational Science & LLM Discourse:
+   - Galland, L., Pelachaud, C., & Pecune, F. (2024). EMMI - Empathic Multimodal
+     Motivational Interviews Dataset: Analyses and Annotations. arXiv:2406.16478.
+     (Verbatim reflection and client-adaptive brevity).
+   - Li, A., Wang, C., Lu, Y., Xu, R., Ma, L., & Lan, Z. (2026). CARE: An Explainable
+     Computational Framework for Assessing Client-Perceived Therapeutic Alliance
+     Using Large Language Models. arXiv:2602.20648. (Rationale-augmented brevity).
+   - Wang, L., et al. (2025). Large Language Model-Powered Conversational Agent
+     Delivering Problem-Solving Therapy (PST) for Family Caregivers. arXiv:2506.11376.
+     (Resolving efficiency vs. thoroughness in Socratic dialogue).
+   - Grice, H. P. (1975). Logic and conversation. (Maxim of Quantity).
+   - Hayakawa, S. I. (1949). Language in Thought and Action. (Ladder of Abstraction).
+   - Sweller, J. (1988). Cognitive load during problem solving. (Cognitive Load Theory).
+
+==============================================================================
+GOOGLE CLOUD & HACKATHON RESOURCES
+==============================================================================
+
+This software was developed for the Google Cloud "All Things Agentic" Hackathon:
+
+1. Multi-Agent Team Architecture:
+   - Wang, A., Lin, C., & Irani, R. (2026). Architecting Multi-Agent Teams:
+     Mastering ADK 2. Google Cloud DevRel Workshop.
+
+2. Judging Alignment & Evaluation Guidance:
+   - Lin, C., Willie, & Call, D. (2026). How to Win: All Things Agentic Hackathon
+     Judging Criteria and Best Practices. Google Cloud.
