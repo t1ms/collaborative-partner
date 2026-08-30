@@ -73,8 +73,12 @@ def test_state_machine_full_pipeline_progression():
     engine.advance(graph, "From the executive perspective, they want de-risked delivery with clear milestone metrics.")
     assert graph.current_phase == StatePhase.S5_ECOLOGY
 
-    # S5: Add constraint & finalize to S6_DONE
+    # S5: Add constraint 1 (leadership has 2 ecology checks)
     engine.advance(graph, "The only trade-off is 5 hours a week away from pure coding, which is completely acceptable.")
+    assert graph.current_phase == StatePhase.S5_ECOLOGY
+
+    # S5: Add constraint 2 & finalize to S6_DONE
+    engine.advance(graph, "The secondary trade-off is shifting 10% sprint bandwidth to documentation. Let's capture this.")
     assert graph.current_phase == StatePhase.S6_DONE
 
 
@@ -88,3 +92,36 @@ def test_wfo_five_predicates_keys():
         OutcomePredicateKey.ECOLOGY,
     ]
     assert len(keys) == 5
+
+
+def test_state_machine_open_clarify_to_multi_distortion_resolution():
+    """
+    Tests open clarification start followed by multi-distortion intake and resolution:
+    Turn 1 (general statement -> 0 detections): enters S2_CLARIFY with open_clarify_0
+    Turn 2 (user provides distortions): ingests cause_effect, universal_quantifier, comparative_deletion
+    Turns 3..: resolves detections sequentially and advances to S3_OUTCOME.
+    """
+    engine = StateMachineEngine()
+    graph = ProblemGraph()
+
+    # Turn 1: Open clarification prompt
+    phase1, q1, resp1 = engine.advance(graph, "We have a performance situation in production.")
+    assert phase1 == StatePhase.S2_CLARIFY
+    assert q1.template_id == "open_clarify_0"
+
+    # Turn 2: User provides detailed distortions
+    phase2, q2, resp2 = engine.advance(
+        graph, "Every time we add replicas it gets worse, it's just the database."
+    )
+    assert phase2 == StatePhase.S2_CLARIFY
+    assert len(graph.detections) >= 2
+    assert any(d.pattern == PatternType.CAUSE_EFFECT for d in graph.detections)
+    assert any(d.pattern == PatternType.UNIVERSAL_QUANTIFIER for d in graph.detections)
+
+    # Turn 3: Resolve active detection with concrete answer
+    active_det = next(d for d in graph.detections if d.id == graph.active_detection_id)
+    phase3, q3, resp3 = engine.advance(
+        graph, "When we profiled during load test, connection pool saturated at 50 max connections."
+    )
+    assert active_det.resolved is True
+

@@ -30,3 +30,17 @@ DOMAIN_HYSTERESIS = int(os.getenv("DOMAIN_HYSTERESIS", "2"))
 DOMAIN_BLEND = os.getenv("DOMAIN_BLEND", "true").lower() in ("true", "1", "yes")
 OVERLAY_DIR = Path(__file__).resolve().parent.parent.parent / "02_map" / "overlays"
 
+# Socratic Deepening & Ecology Caps per Domain
+DOMAIN_MAX_DEEPEN = {
+    "se": int(os.getenv("DOMAIN_MAX_DEEPEN_SE", "1")),
+    "design": int(os.getenv("DOMAIN_MAX_DEEPEN_DESIGN", "1")),
+    "leadership": int(os.getenv("DOMAIN_MAX_DEEPEN_LEADERSHIP", "2")),
+    "general": int(os.getenv("DOMAIN_MAX_DEEPEN_GENERAL", "2")),
+}
+DOMAIN_ECOLOGY_CAPS = {
+    "se": int(os.getenv("DOMAIN_ECOLOGY_CAPS_SE", "1")),
+    "design": int(os.getenv("DOMAIN_ECOLOGY_CAPS_DESIGN", "1")),
+    "leadership": int(os.getenv("DOMAIN_ECOLOGY_CAPS_LEADERSHIP", "2")),
+    "general": int(os.getenv("DOMAIN_ECOLOGY_CAPS_GENERAL", "1")),
+}
+

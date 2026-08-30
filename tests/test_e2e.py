@@ -117,3 +117,61 @@ def test_e2e_server_api_endpoints():
     assert "response" in data
     assert data["current_phase"] == "S2_CLARIFY"
     assert "latest_artifact" in data
+
+
+def test_e2e_sre_system_deconstruction_and_bedrock_wfo():
+    """
+    Reproduces the SRE System Deconstruction flow:
+    1. Multi-distortion utterance: universal_quantifier, cause_effect, comparative_deletion, simple_deletion.
+    2. Deepening cycles (closure -> cycle 1 -> cycle 2 -> concrete resolution).
+    3. Sequential resolution of all cognitive layers.
+    4. Full 5-phase traversal to S6_DONE.
+    5. Verifies ADR output contains >= 3 resolved distortions, testable WFO, and 1 trade-off constraint.
+    """
+    orchestrator = ThinkingPartnerOrchestrator()
+    graph = ProblemGraph()
+
+    turns = [
+        "Our checkout latency is degrading under load, every time we add replicas it gets worse, it's just the database",
+        "I don't know",
+        "When profiling during load test, connection pool saturated at 50 max connections while app CPU was at 15%.",
+        "Under 1x baseline traffic it handled 200 RPS fine, the bottleneck only triggered when traffic reached 3x.",
+        "We need p95 latency under 500ms instead of 2400ms.",
+        "The checkout service p95 spikes above 2400ms.",
+        "under 500ms p95 @3x",
+        "Yes, by configuring pgBouncer connection pooling myself.",
+        "420ms flat 15m, queue <50",
+        "The dashboard shows connection acquisition wait time dropping from 2300ms to 4ms.",
+        "The only trade-off is 1 hour of maintenance window.",
+    ]
+
+    last_art = None
+    last_resp = None
+    for turn in turns:
+        last_resp, graph, last_art = orchestrator.process_turn(graph, turn)
+
+    assert graph.current_phase == StatePhase.S6_DONE
+    assert graph.current_domain == "se"
+
+    # Verify at least 3-4 distortions were detected and marked resolved
+    resolved_dets = [d for d in graph.detections if d.resolved]
+    assert len(resolved_dets) >= 3
+    resolved_patterns = [d.pattern for d in resolved_dets]
+    assert PatternType.CAUSE_EFFECT in resolved_patterns
+    assert PatternType.UNIVERSAL_QUANTIFIER in resolved_patterns
+
+    # Verify WFO predicates
+    assert graph.outcome_predicates[OutcomePredicateKey.POSITIVE].statement == "under 500ms p95 @3x"
+    assert "pgBouncer" in graph.outcome_predicates[OutcomePredicateKey.SELF_INITIATED].statement
+    assert "420ms flat 15m" in graph.outcome_predicates[OutcomePredicateKey.SENSORY].statement
+
+    # Verify Constraints
+    assert len(graph.constraints) == 1
+    assert "1 hour of maintenance" in graph.constraints[0].text
+
+    # Verify live ADR content
+    assert last_art is not None
+    assert f"**Layers Peeled:** {len(resolved_dets)}" in last_art.content
+    assert "✅ RESOLVED" in last_art.content
+    assert "under 500ms p95 @3x" in last_art.content
+    assert "420ms flat 15m, queue <50" in last_art.content

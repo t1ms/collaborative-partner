@@ -18,5 +18,9 @@ problem, stuck, confused, frustrated, decision, overwhelmed, challenge, option, 
 - **3rd Position (Objective Data):** Objective observer evaluating only verifiable facts and structural incentives.
 - **Reframe:** Cognitive Reframe — treating the perceived limitation as an uncalibrated feedback mechanism.
 
+## Depth Policy
+- **Max Deepen Cycles:** 2
+- **Ecology Caps:** 1
+
 ## Forbidden for Domain
 (None)

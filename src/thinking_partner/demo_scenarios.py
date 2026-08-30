@@ -41,4 +41,19 @@ if __name__ == "__main__":
         "The cost is 10 hours a week of stakeholder communication that I usually spend on deep code.",
     ]
 
+    sre_dialogue = [
+        "Our checkout latency is degrading under load, every time we add replicas it gets worse, it's just the database",
+        "I don't know",          # Deepening Cycle 1 (cause_effect, shallow SE depth cap = 1)
+        "When profiling during load test, connection pool saturated at 50 max connections while app CPU was at 15%.",  # Concrete resolution of cause_effect
+        "Under 1x baseline traffic it handled 200 RPS fine, the bottleneck only triggered when traffic reached 3x.",  # Resolves universal_quantifier
+        "We need p95 latency under 500ms instead of 2400ms.",  # Resolves comparative_deletion
+        "The checkout service p95 spikes above 2400ms.",       # Resolves simple_deletion
+        "under 500ms p95 @3x",                                 # S3 Positive Outcome
+        "Yes, by configuring pgBouncer connection pooling myself.",  # S3 Self-Initiated
+        "420ms flat 15m, queue <50",                           # S3 Sensory Evidence
+        "The dashboard shows connection acquisition wait time dropping from 2300ms to 4ms.",  # S4 3rd-Position Perspective
+        "The only trade-off is 1 hour of maintenance window.", # S5 Systemic Ecology Constraint
+    ]
+
     run_scenario("Leadership Validation (Variant B Double Deepening)", leadership_dialogue)
+    run_scenario("SRE System Deconstruction & Bedrock SLO", sre_dialogue)

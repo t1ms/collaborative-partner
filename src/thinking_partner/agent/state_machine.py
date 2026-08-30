@@ -26,6 +26,9 @@ from .models import (
 from .classifier import MetaModelClassifier, classify_domain
 from .socratic import SocraticRouter, sanitize_domain_output, select_framing
 from .overlays import get_domain_pack
+from ..config import DOMAIN_MAX_DEEPEN, DOMAIN_ECOLOGY_CAPS
+
+CAPTURE_CUES = ("capture", "close this", "mark done", "that's enough", "capture this", "let's capture")
 
 
 class StateMachineEngine:
@@ -136,9 +139,16 @@ class StateMachineEngine:
 
     def _handle_s2_clarify(self, graph: ProblemGraph, utt: UtteranceNode) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """S2_CLARIFY: Evaluates answers against deepening protocol or moves to next detection / S3."""
-        # Find the last asked question
         last_q = graph.questions[-1] if graph.questions else None
         target_det = next((d for d in graph.detections if d.id == graph.active_detection_id), None)
+
+        # If we were in open clarification mode (no active detection), ingest detections from this detailed statement
+        if not target_det and not any(not d.resolved for d in graph.detections):
+            new_detections = self.classifier.classify(utt.text, utt.id, prev_domain=graph.current_domain)
+            for new_d in new_detections:
+                if not any(d.pattern == new_d.pattern and d.surface == new_d.surface for d in graph.detections):
+                    graph.detections.append(new_d)
+                    graph.edges.append(GraphEdge(source_id=utt.id, target_id=new_d.id, edge_type="utterance->detection"))
 
         is_closure = SocraticRouter.is_closure(utt.text)
         ans_node = AnswerNode(
@@ -151,8 +161,25 @@ class StateMachineEngine:
         if last_q:
             graph.edges.append(GraphEdge(source_id=last_q.id, target_id=ans_node.id, edge_type="question->answer"))
 
-        # Deepening Check (max 2 extra cycles on closure)
-        if target_det and is_closure and target_det.deepen_count < 2:
+        # Early exit on capture cue in se/design domains
+        user_lower = utt.text.lower()
+        is_capture_cue = any(cue in user_lower for cue in CAPTURE_CUES)
+        if is_capture_cue and graph.current_domain in ("se", "design"):
+            if target_det:
+                target_det.resolved = True
+                target_det.resolved_by_answer_id = ans_node.id
+                ans_node.resolves_detection = True
+                graph.edges.append(GraphEdge(source_id=ans_node.id, target_id=target_det.id, edge_type="answer->resolution"))
+                graph.active_detection_id = None
+            for d in graph.detections:
+                d.resolved = True
+            graph.current_phase = StatePhase.S3_OUTCOME
+            graph.active_detection_id = None
+            return self._init_s3_outcome(graph)
+
+        # Deepening Check (domain-aware cycles on closure)
+        max_cycles = DOMAIN_MAX_DEEPEN.get(graph.current_domain, 2)
+        if target_det and is_closure and target_det.deepen_count < max_cycles:
             target_det.deepen_count += 1
             deepen_q = SocraticRouter.route_deepening_question(
                 target_det, target_det.deepen_count, utt.text, domain=graph.current_domain, blend_with=graph.blend_with
@@ -176,6 +203,7 @@ class StateMachineEngine:
             target_det.resolved_by_answer_id = ans_node.id
             ans_node.resolves_detection = True
             graph.edges.append(GraphEdge(source_id=ans_node.id, target_id=target_det.id, edge_type="answer->resolution"))
+            graph.active_detection_id = None
 
         # Find next unresolved detection in priority order
         next_det = self.classifier.select_highest_priority(graph.detections)
@@ -294,7 +322,6 @@ class StateMachineEngine:
         """S4_ANGLE: Generate 1st/2nd/3rd/Systemic perspectives + Reframe grounded in active domain."""
         pack = get_domain_pack(graph.current_domain)
         p_dict = pack.s4_perspectives
-
         pos_1_title, pos_1_content = p_dict.get("1st", ("Direct Perspective", "Operating from your core objectives."))
         pos_2_title, pos_2_content = p_dict.get("2nd", ("Counterparty Angle", "Seeing constraints and external pressures."))
         pos_3_title, pos_3_content = p_dict.get("3rd", ("Objective Observer", "Evaluating only verifiable data and metrics."))
@@ -372,6 +399,26 @@ class StateMachineEngine:
                 positive_intent="Protecting focus and sustainable execution.",
             )
         )
+        user_lower = utt.text.lower()
+        is_capture_cue = any(cue in user_lower for cue in CAPTURE_CUES)
+
+        max_ecology = DOMAIN_ECOLOGY_CAPS.get(graph.current_domain, 1)
+        if len(graph.constraints) < max_ecology and not is_capture_cue:
+            framing = "Now let's check secondary stakeholder and organizational bandwidth."
+            q_text = "What is the secondary trade-off in team bandwidth or stakeholder alignment if you execute this?"
+            q_node = QuestionNode(
+                template_id="ecology_check_2",
+                socratic_intent=SocraticRouter.route_base_question(
+                    DetectionNode(utterance_id="none", pattern="cause_effect", surface="trade-off", span=[0, 0]),
+                    domain=graph.current_domain,
+                ).socratic_intent,
+                framing_string=framing,
+                text=q_text,
+                domain=graph.current_domain,
+            )
+            graph.questions.append(q_node)
+            return StatePhase.S5_ECOLOGY, q_node, f"That trade-off is recorded.\n\n{framing}\n\n{q_text}"
+
         graph.current_phase = StatePhase.S6_DONE
         return self._handle_s6_done(graph, utt)
 

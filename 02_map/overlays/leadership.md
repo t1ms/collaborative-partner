@@ -20,5 +20,9 @@ team, teams, motivation, ownership, stakeholder, stakeholders, roadmap, product 
 - **3rd Position (Objective Data):** Neutral third-party observer — reviewing observable handoffs, written commitments, and meeting notes.
 - **Reframe:** Incentive Alignment Reframe — treating resistance not as personal friction, but as differing accountability metrics.
 
+## Depth Policy
+- **Max Deepen Cycles:** 2 (deep deconstruction for multi-stakeholder organizational dynamics)
+- **Ecology Caps:** 2 (thorough stakeholder alignment & team bandwidth checks)
+
 ## Forbidden for Domain
 telemetry trace, empty state prototype, p95 latency, psychological distance

@@ -82,15 +82,18 @@ GENERATION_CONFIG = {
     "stop_sequences": ["\n\n\n"],
 }
 
-# Domain Fluidity Dials
+# Domain Fluidity & Depth Dials
 DOMAIN_SWITCH_THRESHOLD = 0.60    # Confidence barrier to trigger cross-domain jump
 DOMAIN_MARGIN = 0.15              # Required score lead over second candidate
 DOMAIN_HYSTERESIS = 2             # 2-turn confirmation before hard domain switch
 DOMAIN_BLEND = True               # 1-turn cross-domain vocabulary blend during jumps
+DOMAIN_MAX_DEEPEN = {"se": 1, "design": 1, "leadership": 2, "general": 2}      # Depth is domain-aware: se/design shallow (1), leadership deep (2)
+DOMAIN_ECOLOGY_CAPS = {"se": 1, "design": 1, "leadership": 2, "general": 1}    # Ecology question caps per domain
 ```
 
 ### Domain Fluidity & Vocabulary Grounding Rules
 - **Same Engine, Domain-Grounded Lexicon:** The core 11-pattern extraction and 5-phase state machine remain immutable. Domains (`se`, `design`, `leadership`, `general`) act as lightweight per-turn vocabulary and perspective lenses.
+- **Adaptive Depth & Ecology Caps:** Technical domains (`se`, `design`) are shallow by design (1 deepen cycle, 1 ecology check, immediate capture cue exit) to avoid over-probing observable system states, while organizational domains (`leadership`) run deep (2 deepen cycles, 2 ecology checks).
 - **1-Turn Blend on Jump:** When a user momentarily references another domain (e.g., SE user bringing in stakeholder politics), the agent stays anchored in the primary domain while incorporating a single-sentence cross-domain bridge without flickering.
 - **Forbidden Lexicon Isolation:** Explicitly forbids clinical/therapy abstractions (`psychological distance`, `filtering out`, `metacognitive labels`) from polluting technical or design contexts.
 

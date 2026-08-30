@@ -20,5 +20,9 @@ p95, p99, latency, replica, replicas, pagerduty, grafana, checkout api, queue, q
 - **3rd Position (Objective Data):** Distributed telemetry black box — measuring only exact timestamps, queue depth, and error codes.
 - **Reframe:** Systemic Bottleneck Reframe — treating latency not as bad code, but as unbuffered I/O or mismatched concurrency models.
 
+## Depth Policy
+- **Max Deepen Cycles:** 1 (shallow by design for observable infrastructure/code problems)
+- **Ecology Caps:** 1 (single operational failover/trade-off check)
+
 ## Forbidden for Domain
 psychological distance, filtering out, metacognitive label, emotional reaction, inner feeling, emotional charge, therapeutic

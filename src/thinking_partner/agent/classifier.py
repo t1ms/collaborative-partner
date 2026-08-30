@@ -41,17 +41,17 @@ DOWNSTREAM_SYMPTOM_CUES = [
 PATTERNS_REGEX = [
     (
         PatternType.MIND_READING,
-        r"(they (don't think|think|believe|feel)|she knows|he thinks|everybody thinks|people think|they assume|boss thinks|investors feel|they don't see me as)",
+        r"(they (don't think|think|believe|feel|assume|see me as)|she knows|he thinks|everybody thinks|people think|they assume|boss thinks|investors feel|they don't see me as)",
         0.95,
     ),
     (
         PatternType.CAUSE_EFFECT,
-        r"(\b(makes me|causes me to|forces me to|because of .* i (can't|must)|drives me to|results in me)\b)",
+        r"(\b(makes me|causes( me)? to|forces me to|drives me to|results in( me)?|leads to|caused by|due to|because of|(it's )?just the \w+|so i (shouldn't|must|can't))\b)",
         0.92,
     ),
     (
         PatternType.COMPLEX_EQUIVALENCE,
-        r"(\bmeans that\b|\bequals\b|\bmeans they\b|\bif .* then it means\b|\bshows that i'm\b)",
+        r"(\bmeans that\b|\bequals\b|\bmeans they\b|\bif .* then it means\b|\bshows that i'm\b|\bmeans i\b|\bmeans we\b)",
         0.90,
     ),
     (
@@ -61,7 +61,7 @@ PATTERNS_REGEX = [
     ),
     (
         PatternType.UNIVERSAL_QUANTIFIER,
-        r"\b(always|never|every time|everyone|nobody|every single|all of them|none of them)\b",
+        r"\b(always|never|every time|everyone|everybody|nobody|every single|all of them|none of them)\b",
         0.88,
     ),
     (
@@ -76,12 +76,12 @@ PATTERNS_REGEX = [
     ),
     (
         PatternType.LOST_PERFORMATIVE,
-        r"\b(it's (bad|wrong|unprofessional|unacceptable|essential|critical) to\b|\bone shouldn't\b)",
+        r"\b(it's (bad|wrong|unprofessional|unacceptable|essential|critical) to\b|\bone shouldn't\b|\bshouldn't\b)",
         0.85,
     ),
     (
         PatternType.COMPARATIVE_DELETION,
-        r"\b(faster|better|worse|easier|harder|more productive|less effective|too slow|too much)\b",
+        r"\b(faster|better|worse|easier|harder|more productive|less effective|too slow|too much|too high|too low|higher|lower|slower|degrading)\b",
         0.80,
     ),
     (
@@ -96,7 +96,7 @@ PATTERNS_REGEX = [
     ),
     (
         PatternType.SIMPLE_DELETION,
-        r"\b(i'm stuck|i'm overwhelmed|this is broken|it's impossible|it failed|can't decide)\b",
+        r"\b(i'm stuck|i'm overwhelmed|this is broken|it's impossible|it failed|can't decide|latency issue|latency problem|degrading under load|performance issue|broken)\b",
         0.78,
     ),
 ]

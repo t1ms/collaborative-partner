@@ -20,5 +20,9 @@ users, user, onboarding, figma, journey, drop-off, drop off, prototype, empty st
 - **3rd Position (Objective Data):** Session replay observer — tracking mouse trajectories, hesitation pauses, and drop-off steps.
 - **Reframe:** Interaction Affordance Reframe — treating user churn not as user error, but as an ambiguous visual affordance.
 
+## Depth Policy
+- **Max Deepen Cycles:** 1 (shallow by design for observable UX/interaction problems)
+- **Ecology Caps:** 1 (single cognitive load/edge-case check)
+
 ## Forbidden for Domain
 psychological distance, metacognitive label, sre telemetry, database lock, server replica, therapeutic

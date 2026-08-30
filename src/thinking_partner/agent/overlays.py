@@ -4,10 +4,11 @@ Reads overlay specifications from 02_map/overlays/ and provides structured vocab
 framing angles, S4 perspective definitions, and forbidden phrase lists for each domain.
 """
 
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from pydantic import BaseModel, Field
-from ..config import OVERLAY_DIR
+from ..config import OVERLAY_DIR, DOMAIN_MAX_DEEPEN, DOMAIN_ECOLOGY_CAPS
 
 
 class DomainPack(BaseModel):
@@ -22,6 +23,8 @@ class DomainPack(BaseModel):
     s4_perspectives: Dict[str, Tuple[str, str]] = Field(default_factory=dict)  # pos -> (title, content)
     forbidden: List[str] = Field(default_factory=list)
     vocab_summary: str = ""
+    max_deepen: int = 2
+    ecology_caps: int = 1
 
 
 # Built-in fallback packs ensuring resilient operation
@@ -53,6 +56,8 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
             "emotional reaction", "inner feeling", "emotional charge", "therapeutic"
         ],
         vocab_summary="telemetry, traces, p95/p99 latency, queue depth, replica capacity, failover, SLA/SLO contracts",
+        max_deepen=DOMAIN_MAX_DEEPEN.get("se", 1),
+        ecology_caps=DOMAIN_ECOLOGY_CAPS.get("se", 1),
     ),
     "design": DomainPack(
         domain="design",
@@ -80,6 +85,8 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
             "sre telemetry", "database lock", "server replica", "therapeutic"
         ],
         vocab_summary="user journey, onboarding flow, click path, drop-off funnel, visual affordance, empty state, cognitive load",
+        max_deepen=DOMAIN_MAX_DEEPEN.get("design", 1),
+        ecology_caps=DOMAIN_ECOLOGY_CAPS.get("design", 1),
     ),
     "leadership": DomainPack(
         domain="leadership",
@@ -106,6 +113,8 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
             "telemetry trace", "empty state prototype", "p95 latency", "psychological distance"
         ],
         vocab_summary="stakeholder alignment, decision ownership, roadmap commitments, sprint backlog, organizational incentives",
+        max_deepen=DOMAIN_MAX_DEEPEN.get("leadership", 2),
+        ecology_caps=DOMAIN_ECOLOGY_CAPS.get("leadership", 2),
     ),
     "general": DomainPack(
         domain="general",
@@ -124,6 +133,8 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
         },
         forbidden=[],
         vocab_summary="bedrock assumptions, verifiable evidence, concrete observations, boundary constraints",
+        max_deepen=DOMAIN_MAX_DEEPEN.get("general", 2),
+        ecology_caps=DOMAIN_ECOLOGY_CAPS.get("general", 1),
     ),
 }
 
@@ -160,6 +171,19 @@ def load_domain_packs(overlay_dir: Optional[Path] = None) -> Dict[str, DomainPac
                     forbs = [w.strip().lower() for w in forb_section.replace("\n", ",").split(",") if w.strip() and w.strip() != "(none)"]
                     if forbs:
                         base_pack.forbidden = forbs
+
+                # Extract depth policy if present
+                if "## Depth Policy" in content:
+                    depth_section = content.split("## Depth Policy")[1].split("##")[0]
+                    for line in depth_section.splitlines():
+                        if "Max Deepen Cycles:" in line or "max_deepen" in line.lower():
+                            m = re.search(r"(\d+)", line)
+                            if m:
+                                base_pack.max_deepen = int(m.group(1))
+                        if "Ecology Caps:" in line or "ecology_caps" in line.lower():
+                            m = re.search(r"(\d+)", line)
+                            if m:
+                                base_pack.ecology_caps = int(m.group(1))
 
                 packs[domain_name] = base_pack
             except Exception:
