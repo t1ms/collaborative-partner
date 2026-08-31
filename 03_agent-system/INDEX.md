@@ -19,5 +19,5 @@ Build design for the Collaborative Thinking Partner. All decisions reflect the d
 
 **Archives (never delete, per user directive):** `../_archive/agent-system/2026-08-28_pre-socratic/`, `../_archive/agent-system/2026-08-28_pre-deepening/`, `../_archive/agent-system/2026-08-28_variant-b/`
 
-**Status (2026-08-31):** Full production Python build complete in `src/thinking_partner/` with 66/66 passing tests across classifier, socratic layer, state machine, graph store, ADR diffs, security injection, crisis triage, and E2E worked examples. Web split-pane UI and CLI demo runners operational.
+**Status (2026-08-31):** Full production Python build complete and **deployed live to Google Cloud Run** (`us-central1`, Vertex AI integration active) at [https://collaborative-thinking-partner-508821610672.us-central1.run.app](https://collaborative-thinking-partner-508821610672.us-central1.run.app). 66/66 passing tests across classifier, socratic layer, state machine, graph store, ADR diffs, security injection, crisis triage, and E2E worked examples. Split-pane web UI and API fully verified in production.
 

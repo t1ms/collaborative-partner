@@ -3,10 +3,12 @@
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.14-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
 [![Google Gen AI](https://img.shields.io/badge/Model-Gemini_3.7_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
+[![Cloud Run](https://img.shields.io/badge/Cloud_Run-Deployed_Live-34A853?logo=googlecloud&logoColor=white)](https://collaborative-thinking-partner-508821610672.us-central1.run.app)
 [![Tests](https://img.shields.io/badge/Tests-66%20Passed-brightgreen.svg)](#)
 [![License](https://img.shields.io/badge/License-Apache_2.0_%2F_CC_BY_4.0-blue.svg)](LICENSE)
 
 > **A Socratic Problem-Clarification Engine.**  
+> **Live Demo:** [https://collaborative-thinking-partner-508821610672.us-central1.run.app](https://collaborative-thinking-partner-508821610672.us-central1.run.app)  
 > Rather than offering generic advice or ungrounded solutions, the Thinking Partner debugs the *structure of problem statements* using formal cognitive grammar (11 Meta-Model patterns), 8 Paul-Elder Socratic moves, an empirical working alliance verbosity dial, fluid domain-grounded overlays, and a live mutating Problem Graph.
 
 ---
