@@ -81,7 +81,7 @@ PATTERNS_REGEX = [
     ),
     (
         PatternType.COMPARATIVE_DELETION,
-        r"\b(faster|better|worse|easier|harder|more productive|less effective|too slow|too much|too high|too low|higher|lower|slower|degrading)\b",
+        r"\b(expensive|cheap|costly|faster|better|worse|easier|harder|more productive|less effective|too slow|too much|too high|too low|higher|lower|slower|degrading)\b",
         0.80,
     ),
     (
@@ -102,11 +102,123 @@ PATTERNS_REGEX = [
 ]
 
 
+import logging
+import re
 from typing import List, Optional, Tuple, Dict, Any
 from pydantic import BaseModel, Field
 from .models import PatternType, LayerType, DetectionNode
 from .overlays import load_domain_packs, get_domain_pack, DomainPack
-from ..config import DOMAIN_SWITCH_THRESHOLD, DOMAIN_MARGIN, DOMAIN_HYSTERESIS, DOMAIN_BLEND
+from ..config import (
+    DOMAIN_SWITCH_THRESHOLD,
+    DOMAIN_MARGIN,
+    DOMAIN_HYSTERESIS,
+    DOMAIN_BLEND,
+    DOMAIN_LLM_WEIGHT,
+)
+
+logger = logging.getLogger("thinking_partner.classifier")
+
+# Safe non-crisis idiom patterns to exclude from self-harm classification
+NON_CRISIS_IDIOMS = [
+    r"\b(deadline|deadlines|workload|backlog|meeting|meetings|traffic|bug|queue|latency|server|boss|job)\s+(is|are)\s+killing me\b",
+    r"\b(killing it|killing me with|dying of laughter|dying to see|dying to know|dying for)\b",
+]
+
+IMMINENT_CRISIS_PHRASES = [
+    r"\b(want to die|kill myself|end it all|end my life|commit suicide|take my own life|gonna kill myself|going to kill myself|ending it all)\b.*\b(tonight|today|now|right now|immediately)\b",
+    r"\b(tonight|today|now|right now|immediately)\b.*\b(want to die|kill myself|end it all|end my life|commit suicide|take my own life|gonna kill myself|going to kill myself|ending it all)\b",
+    r"\b(want to die tonight|ending it all now|no reason to live tonight|gonna end it tonight|going to end it tonight)\b",
+    r"\b(suicide tonight|suicide now|kill myself tonight|kill myself now)\b",
+]
+
+DISTRESS_CRISIS_PHRASES = [
+    r"\b(want to die|wish i was dead|wish i were dead|no reason to live|can't go on anymore|cannot go on anymore|better off dead|nobody would miss me|nobody cares if i'm gone|hopeless and empty|feel like dying)\b",
+    r"\b(empty inside and hopeless|severe depression and can't go on|nothing to live for)\b",
+]
+
+URGENT_HARM_CUES = [
+    # Physical water/leak damage to equipment
+    r"\b(leak|leaking|dripping|flood|flooding|water)\b.*\b(pc|computer|laptop|server|rack|outlet|desk|wet)\b",
+    r"\b(will get wet|getting wet|soaked)\b",
+    # Electrical/fire hazard & swollen battery hazard
+    r"\b(sparking|sparks flying|outlet smoking|fire on the desk|short circuit|cable burning)\b",
+    r"\b(swollen|swelling|bloated|bloating|punctured|puncturing|pierced|bulging|smoking)\b.*\b(battery|phone|device|laptop|macbook|ipad|cell|pack)\b",
+    r"\b(battery|phone|device|laptop|macbook|ipad|cell|pack)\b.*\b(swollen|swelling|bloated|bloating|punctured|puncturing|pierced|bulging|smoking)\b",
+    # Irreversible pending data destruction
+    r"\b(rm -rf|drop database|drop table|delete from|truncate table)\b.*\b(prod|production|pending|accident|accidental|by mistake|run it now)\b",
+    r"\b(about to rm -rf|pending rm -rf|executing rm -rf)\b",
+]
+
+PRAGMATIC_ACTION_CUES = [
+    # Physical repairs, swaps, hardware maintenance & purchases (Archetype A)
+    r"\b(open up|take apart|disassemble)\b.*\b(phone|iphone|android|device|laptop|macbook|pc|case|console)\b",
+    r"\b(change|swap|replace|install|upgrade|repair)\b.*\b(battery|screen|display|ram|memory|ssd|hard drive|disk|fan|thermal paste|monitor)\b",
+    r"\b(buy|buying|purchase|purchasing|get a new|shop for)\b.*\b(monitor|display|laptop|phone|keyboard|desk|chair|mouse|hardware)\b",
+    # Scripting, scrapers, automated parsers, custom tools (Archetype B)
+    r"\b(write|build|create)\b.*\b(script|scraper|parser|automation|bot|tool)\b.*\b(to |for |that |scrape|parse|extract|pull|fetch)\b",
+    r"\b(scrape|scraping|parse|parsing)\b.*\b(pdf|pdfs|documents|pages|sites|urls|files|html)\b",
+    # Large migrations, rewrites, build-vs-buy (Archetype B/D)
+    r"\b(rewrite|rewriting)\b.*\b(in go|in rust|in python|in ts|in typescript|the backend|the frontend|the service|the engine)\b",
+    r"\b(migrate|migrating)\b.*\b(postgres|database|db|mysql|redis|kafka|cluster|mongo|version)\b",
+    r"\b(build|building)\b.*\b(our own|custom|in-house)\b.*\b(auth|authentication|oauth|billing|queue|payment)\b",
+]
+
+
+def is_crisis_imminent(text: str) -> bool:
+    """
+    Detects explicit, immediate threat of self-harm or suicide (Tier 1).
+    Decoupled from domain keyword scoring; operates over multi-turn window.
+    """
+    text_lower = text.lower()
+    for idiom in NON_CRISIS_IDIOMS:
+        if re.search(idiom, text_lower):
+            # Check if there is an explicit suicide phrase beyond the idiom
+            if not any(re.search(pat, text_lower) for pat in [r"\b(kill myself|commit suicide|end my life)\b"]):
+                return False
+
+    for pattern in IMMINENT_CRISIS_PHRASES:
+        if re.search(pattern, text_lower):
+            return True
+    return False
+
+
+def is_crisis_distress(text: str) -> bool:
+    """
+    Detects chronic or severe emotional distress/hopelessness without explicit immediate suicide (Tier 3).
+    """
+    text_lower = text.lower()
+    for idiom in NON_CRISIS_IDIOMS:
+        if re.search(idiom, text_lower):
+            if not any(re.search(pat, text_lower) for pat in [r"\b(want to die|no reason to live|better off dead)\b"]):
+                return False
+
+    for pattern in DISTRESS_CRISIS_PHRASES:
+        if re.search(pattern, text_lower):
+            return True
+    return False
+
+
+def is_urgent_harm(text: str) -> bool:
+    """
+    Detects acute physical hazard (leak, fire, swollen battery) or catastrophic pending data loss (Tier 2).
+    """
+    text_lower = text.lower()
+    for pattern in URGENT_HARM_CUES:
+        if re.search(pattern, text_lower):
+            return True
+    return False
+
+
+def is_pragmatic_action(text: str) -> bool:
+    """
+    Detects concrete physical maintenance, setup/purchasing, scripting/scraping,
+    or build-vs-buy implementation intents (Tier 4).
+    """
+    text_lower = text.lower()
+    for pattern in PRAGMATIC_ACTION_CUES:
+        if re.search(pattern, text_lower):
+            return True
+    return False
 
 
 class DomainClassificationResult(BaseModel):
@@ -122,10 +234,12 @@ def classify_domain(
     prev_domain: str = "general",
     domain_history: Optional[List[str]] = None,
     source_type: Optional[str] = None,
+    llm_hint: Optional[str] = None,
+    llm_conf: Optional[float] = None,
 ) -> DomainClassificationResult:
     """
-    Scores domain keywords, applies ingest source boost and hysteresis,
-    and returns (domain, blend_with, confidence, scores).
+    Scores domain keywords, applies ingest source boost, LLM semantic prior,
+    and hysteresis, and returns (domain, blend_with, confidence, scores).
     """
     history = list(domain_history or [])
     packs = load_domain_packs()
@@ -149,12 +263,16 @@ def classify_domain(
     # Ingest source boost
     if source_type:
         st = source_type.lower()
-        if any(k in st for k in ["repo", "github", "code", "log", "metrics", "telemetry", "trace"]):
+        if any(k in st for k in ["repo", "github", "code", "log", "metrics", "telemetry", "trace", "se"]):
             raw_scores["se"] += 2.0
         elif any(k in st for k in ["figma", "design", "wireframe", "prototype", "user", "ux"]):
             raw_scores["design"] += 2.0
-        elif any(k in st for k in ["1-on-1", "slack", "meeting", "roadmap", "stakeholder", "exec"]):
+        elif any(k in st for k in ["1-on-1", "slack", "meeting", "roadmap", "stakeholder", "exec", "leadership"]):
             raw_scores["leadership"] += 2.0
+
+    # LLM semantic prior boost (treats None as legacy pass, drops explicit < 0.50)
+    if llm_hint and llm_hint in raw_scores and (llm_conf is None or llm_conf >= 0.50):
+        raw_scores[llm_hint] += DOMAIN_LLM_WEIGHT
 
     # Apply tiny previous domain bias
     if prev_domain in raw_scores and raw_scores[prev_domain] > 0:
@@ -173,8 +291,12 @@ def classify_domain(
         candidate = top_dom
         confidence = min(0.99, 0.40 + 0.15 * top_score)
 
-    # Determine winning domain with margin check (requires 2+ keyword hits or source boost to avoid single-word false positives)
-    has_sufficient_signal = (top_score >= 2.0) or (top_score >= 1.0 and bool(source_type))
+    # Determine winning domain with margin check (requires 2+ keyword hits, source boost, or LLM prior to avoid single-word false positives)
+    has_sufficient_signal = (
+        (top_score >= 2.0)
+        or (top_score >= 1.0 and bool(source_type))
+        or (top_score >= DOMAIN_LLM_WEIGHT and bool(llm_hint))
+    )
     if confidence >= DOMAIN_SWITCH_THRESHOLD and (top_score - second_score >= DOMAIN_MARGIN) and has_sufficient_signal:
         winning_candidate = candidate
     else:
@@ -208,6 +330,12 @@ def classify_domain(
             result_domain = prev_domain
             blend_with = winning_candidate if DOMAIN_BLEND else None
 
+    logger.info(
+        f"[Classifier] domain={result_domain} candidate={winning_candidate} "
+        f"llm_hint={llm_hint} llm_conf={llm_conf} top_score={top_score:.2f} "
+        f"blend_with={blend_with}"
+    )
+
     return DomainClassificationResult(
         domain=result_domain,
         blend_with=blend_with,
@@ -232,13 +360,25 @@ class MetaModelClassifier:
                 return LayerType.UPSTREAM_STATE
         return LayerType.DOWNSTREAM_SYMPTOM
 
-    def classify(self, utterance_text: str, utterance_id: str, prev_domain: str = "general") -> List[DetectionNode]:
+    def classify(
+        self,
+        utterance_text: str,
+        utterance_id: str,
+        prev_domain: str = "general",
+        llm_hint: Optional[str] = None,
+        llm_conf: Optional[float] = None,
+    ) -> List[DetectionNode]:
         """Deterministic regex-based classification with dual-horizon layer tagging and domain hint."""
         detections: List[DetectionNode] = []
         text_lower = utterance_text.lower()
         overall_layer = self.determine_layer(utterance_text)
 
-        domain_res = classify_domain(utterance_text, prev_domain=prev_domain)
+        domain_res = classify_domain(
+            utterance_text,
+            prev_domain=prev_domain,
+            llm_hint=llm_hint,
+            llm_conf=llm_conf,
+        )
 
         # Check all pattern rules
         for pattern_type, regex_pattern, default_conf in PATTERNS_REGEX:

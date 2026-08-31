@@ -195,5 +195,9 @@ class ProblemGraph(BaseModel):
     edges: List[GraphEdge] = Field(default_factory=list)
     active_detection_id: Optional[str] = None
     taste_profile: TasteProfile = Field(default_factory=TasteProfile)
+    total_output_tokens: int = 0
+    turn_timestamps: List[float] = Field(default_factory=list)
+    crisis_lock_turns: int = 0
     created_at: float = Field(default_factory=time.time)
     updated_at: float = Field(default_factory=time.time)
+

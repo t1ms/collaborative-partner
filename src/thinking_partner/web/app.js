@@ -130,6 +130,7 @@ async function handleSendMessage(e) {
   messageInput.disabled = true;
   sendBtn.disabled = true;
 
+  let data = null;
   try {
     const res = await fetch("/api/chat", {
       method: "POST",
@@ -140,21 +141,35 @@ async function handleSendMessage(e) {
       }),
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    if (res.status === 429) {
+      const errData = await res.json().catch(() => ({}));
+      appendAgentMessage(errData.detail || "Rate limit reached. Please take a breath and try again shortly.", null);
+    } else if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    } else {
+      data = await res.json();
 
-    // Render agent response
-    appendAgentMessage(data.response, data.graph);
+      // Render agent response
+      appendAgentMessage(data.response, data.graph);
 
-    // Update Right Pane (ADR, Graph, Diff, Badges)
-    updateArtifactView(data.latest_artifact);
-    updateGraphView(data.graph);
-    updatePhaseBadge(data.current_phase);
-    updateDomainBadge(data.current_domain, data.blend_with);
+      // Update Right Pane (ADR, Graph, Diff, Badges)
+      updateArtifactView(data.latest_artifact);
+      updateGraphView(data.graph);
+      updatePhaseBadge(data.current_phase);
+      updateDomainBadge(data.current_domain, data.blend_with);
+
+      if (data.limit_hit) {
+        messageInput.placeholder = "Session completed — Click New Session to explore a new problem.";
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        return;
+      }
+    }
   } catch (err) {
     console.error("Chat error:", err);
     appendAgentMessage("An error occurred during processing. Please try again.", null);
   } finally {
+    if (data?.limit_hit) return;
     messageInput.disabled = false;
     sendBtn.disabled = false;
     messageInput.focus();
@@ -176,6 +191,19 @@ function appendUserMessage(text) {
   chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
+const INTENT_LABELS = {
+  'clarification': 'Socratic • Clarification',
+  'probe-assumption': 'Socratic • Testing Assumptions',
+  'probe-alternative': 'Socratic • Exploring Alternatives',
+  'probe-causal-link': 'Socratic • Causal Trace',
+  'probe-evidence': 'Socratic • Verifying Evidence',
+  'probe-criteria': 'Socratic • Calibrating Standards',
+  'probe-equation': 'Socratic • Separating Meaning',
+  'probe-source': 'Socratic • Source & Origin',
+  'probe-barrier': 'Socratic • Boundary Map',
+  'meta-cognition': 'Socratic • Analytic Perspective',
+};
+
 function appendAgentMessage(text, graph) {
   const card = document.createElement("div");
   card.className = "message-card agent-card";
@@ -188,7 +216,8 @@ function appendAgentMessage(text, graph) {
     if (lastQ.deepen_cycle > 0) {
       badgeHtml = `<span class="badge badge-deepen">Deepening Cycle ${lastQ.deepen_cycle}/2 (${lastQ.technique || 'descend'})</span>`;
     } else if (lastQ.socratic_intent) {
-      badgeHtml = `<span class="badge badge-pattern">${lastQ.socratic_intent}</span>`;
+      const intentLabel = INTENT_LABELS[lastQ.socratic_intent] || `Socratic • ${lastQ.socratic_intent}`;
+      badgeHtml = `<span class="badge badge-pattern">${escapeHtml(intentLabel)}</span>`;
     }
   }
 

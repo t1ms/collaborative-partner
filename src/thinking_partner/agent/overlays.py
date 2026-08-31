@@ -39,7 +39,10 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
             "rps", "database", "postgres", "redis", "kafka", "deadlock", "timeout",
             "retry", "failover", "bottleneck", "telemetry", "trace", "traces", "span",
             "oom", "memory leak", "cpu spike", "deploy", "incident", "sla", "slo",
-            "rfc", "microservice", "cluster", "kubernetes", "k8s"
+            "rfc", "microservice", "cluster", "kubernetes", "k8s",
+            "code", "vibe code", "script", "app", "software", "scanner", "driver",
+            "hardware", "tooling", "build-vs-buy", "automation", "batch", "open source",
+            "library", "cli", "sdk", "integration", "ocr", "api"
         ],
         primary_observer="SRE / telemetry observer with only metrics, traces, and black-box logs",
         counterparty="Downstream service caller or upstream dependencies with hard timeout contracts",
@@ -55,7 +58,7 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
             "psychological distance", "filtering out", "metacognitive label", "metacognitive",
             "emotional reaction", "inner feeling", "emotional charge", "therapeutic"
         ],
-        vocab_summary="telemetry, traces, p95/p99 latency, queue depth, replica capacity, failover, SLA/SLO contracts",
+        vocab_summary="telemetry, traces, p95/p99 latency, queue depth, replica capacity, failover, SLA/SLO contracts, scanner drivers, spare capacity, build-vs-buy",
         max_deepen=DOMAIN_MAX_DEEPEN.get("se", 1),
         ecology_caps=DOMAIN_ECOLOGY_CAPS.get("se", 1),
     ),
@@ -124,7 +127,7 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
         primary_observer="Objective observer viewing only the observable sequence of events",
         counterparty="Counterparty experiencing the external effects of the situation",
         evidence_sources="Concrete observable actions, timestamped events, verifiable outcomes",
-        orientation_rationale="Let's look at the bedrock facts underneath the interpretation.",
+        orientation_rationale="Let's look at the observable facts and constraints underneath the situation.",
         s4_perspectives={
             "1st": ("Your Direct Perspective", "Operating from your core objectives with direct agency and realistic boundaries."),
             "2nd": ("Counterparty / Stakeholder Angle", "Seeing the interaction from their operational constraints, deadlines, and unstated pressures."),
@@ -132,7 +135,7 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
             "reframe": ("Cognitive Reframe", "Treating the perceived limitation not as an identity deficit, but as a lack of calibrated feedback mechanisms."),
         },
         forbidden=[],
-        vocab_summary="bedrock assumptions, verifiable evidence, concrete observations, boundary constraints",
+        vocab_summary="observable facts, underlying constraints, concrete friction, practical tradeoffs",
         max_deepen=DOMAIN_MAX_DEEPEN.get("general", 2),
         ecology_caps=DOMAIN_ECOLOGY_CAPS.get("general", 1),
     ),

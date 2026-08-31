@@ -23,8 +23,18 @@ from .models import (
     LayerType,
     GraphEdge,
 )
-from .classifier import MetaModelClassifier, classify_domain
-from .socratic import SocraticRouter, sanitize_domain_output, select_framing
+from .classifier import (
+    MetaModelClassifier,
+    classify_domain,
+    is_pragmatic_action,
+)
+from .socratic import (
+    SocraticRouter,
+    sanitize_domain_output,
+    select_framing,
+    is_tooling_or_build,
+    is_infra_telemetry,
+)
 from .overlays import get_domain_pack
 from ..config import DOMAIN_MAX_DEEPEN, DOMAIN_ECOLOGY_CAPS
 
@@ -37,7 +47,14 @@ class StateMachineEngine:
     def __init__(self, classifier: Optional[MetaModelClassifier] = None):
         self.classifier = classifier or MetaModelClassifier()
 
-    def advance(self, graph: ProblemGraph, user_input: str, source_type: Optional[str] = None) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+    def advance(
+        self,
+        graph: ProblemGraph,
+        user_input: str,
+        source_type: Optional[str] = None,
+        llm_hint: Optional[str] = None,
+        llm_conf: float = 0.0,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """
         Processes a user turn through the state machine.
         Returns: (new_phase, next_question_node, agent_response_text)
@@ -48,6 +65,8 @@ class StateMachineEngine:
             prev_domain=graph.current_domain,
             domain_history=graph.domain_history,
             source_type=source_type,
+            llm_hint=llm_hint,
+            llm_conf=llm_conf,
         )
         graph.current_domain = domain_res.domain
         graph.blend_with = domain_res.blend_with
@@ -117,16 +136,19 @@ class StateMachineEngine:
             response_text = f"{ack}\n\n{q_node.framing_string}\n\n{q_node.text}"
             return StatePhase.S2_CLARIFY, q_node, response_text
         else:
-            # No specific pattern matched: open clarification
-            framing = select_framing(graph.current_domain, "open", blend_with=graph.blend_with)
-            q_text = "What is the specific situation or decision that is creating the most friction right now?"
+            # No specific pattern matched: check pragmatic action or open clarification
+            if is_pragmatic_action(utt.text):
+                framing = "Let's check the pre-flight requirements and triggers before executing."
+                if any(k in utt.text.lower() for k in ["phone", "battery", "monitor", "screen", "ram", "hardware"]):
+                    q_text = "What specific symptoms, degradation, or device issues are prompting this repair or upgrade before you begin?"
+                else:
+                    q_text = "Before writing custom scripts or executing this plan, what underlying bottleneck or system trigger prompted this approach?"
+            else:
+                framing = select_framing(graph.current_domain, "open", blend_with=graph.blend_with)
+                q_text = "What is the specific situation or decision that is creating the most friction right now?"
             q_node = QuestionNode(
                 template_id="open_clarify_0",
-                socratic_intent=SocraticRouter.route_base_question(
-                    DetectionNode(utterance_id=utt.id, pattern="simple_deletion", surface="friction", span=[0, 0]),
-                    domain=graph.current_domain,
-                    blend_with=graph.blend_with,
-                ).socratic_intent,
+                socratic_intent=SocraticIntent.CLARIFICATION,
                 framing_string=framing,
                 text=q_text,
                 domain=graph.current_domain,
@@ -237,7 +259,11 @@ class StateMachineEngine:
 
         # Ask first WFO predicate (Positive state)
         framing = select_framing(graph.current_domain, SocraticIntent.PROBE_ALTERNATIVE, blend_with=graph.blend_with)
-        q_text = "Stated in the positive — what do you actually want to achieve, rather than what you're trying to avoid?"
+        all_text = " ".join(u.text.lower() for u in graph.utterances)
+        if graph.current_domain == "se" and is_tooling_or_build(all_text):
+            q_text = "Stated in the positive — what specific capability or workflow do you want the final software or tool to deliver?"
+        else:
+            q_text = "Stated in the positive — what do you actually want to achieve, rather than what you're trying to avoid?"
         q_node = QuestionNode(
             template_id="wfo_positive_1",
             socratic_intent=SocraticRouter.route_base_question(
@@ -288,7 +314,11 @@ class StateMachineEngine:
             # Ask Sensory Evidence predicate
             framing = select_framing(graph.current_domain, SocraticIntent.PROBE_EVIDENCE, blend_with=graph.blend_with)
             if graph.current_domain == "se":
-                q_text = "What specific, observable telemetry metric will tell you this is resolved — what will the dashboard, p95 panel, or error log show?"
+                all_text = " ".join(u.text.lower() for u in graph.utterances)
+                if is_infra_telemetry(all_text):
+                    q_text = "What specific, observable telemetry metric will tell you this is resolved — what will the dashboard, p95 panel, or error log show?"
+                else:
+                    q_text = "What specific, observable output or verification (such as batch throughput, exported files, or error-free execution) will tell you this is working?"
             elif graph.current_domain == "design":
                 q_text = "What specific, observable user behavior will tell you this is resolved — what will the task completion rate or click path show?"
             else:
@@ -335,8 +365,13 @@ class StateMachineEngine:
         ]
 
         if graph.current_domain == "se":
-            framing = "Let's inspect this from black-box telemetry and caller perspectives."
-            q_text = "Looking at this from the 3rd-position (the telemetry traces and service dashboards) — what does the data show that we might have overlooked?"
+            all_text = " ".join(u.text.lower() for u in graph.utterances)
+            if is_infra_telemetry(all_text):
+                framing = "Let's inspect this from black-box telemetry and caller perspectives."
+                q_text = "Looking at this from the 3rd-position (the telemetry traces and service dashboards) — what does the data show that we might have overlooked?"
+            else:
+                framing = "Let's inspect this from an objective engineering perspective."
+                q_text = "Looking at this from the 3rd-position (an objective engineer reviewing the toolchain and hardware constraints) — what trade-offs or alternatives might we have overlooked?"
         elif graph.current_domain == "design":
             framing = "Let's inspect this from the first-time user perspective."
             q_text = "Looking at this from the 3rd-position (the raw session replay of the user) — what does the click path show that we might have overlooked?"
@@ -365,8 +400,13 @@ class StateMachineEngine:
         """S4_ANGLE -> S5_ECOLOGY: Stress-test systemic costs."""
         graph.current_phase = StatePhase.S5_ECOLOGY
         if graph.current_domain == "se":
-            framing = "Now we stress-test operational failover and system trade-offs."
-            q_text = "If we deploy this solution tomorrow, what is the trade-off in latency, resource utilization, or operational complexity?"
+            all_text = " ".join(u.text.lower() for u in graph.utterances)
+            if is_infra_telemetry(all_text):
+                framing = "Now we stress-test operational failover and system trade-offs."
+                q_text = "If we deploy this solution tomorrow, what is the trade-off in latency, resource utilization, or operational complexity?"
+            else:
+                framing = "Now we stress-test development maintenance and operational trade-offs."
+                q_text = "If you adopt or build this solution tomorrow, what is the trade-off in ongoing maintenance time, setup complexity, or toolchain dependencies?"
         elif graph.current_domain == "design":
             framing = "Now we stress-test user journey trade-offs."
             q_text = "If we ship this flow tomorrow, what is the trade-off in user cognitive load or edge-case flows?"
@@ -444,6 +484,8 @@ class StateMachineEngine:
         if dom == "se":
             if layer == LayerType.UPSTREAM_STATE:
                 return "Acknowledged on the sustained system pressure and on-call load."
+            if is_tooling_or_build(text):
+                return "Understood on the build-versus-buy trade-off and batch workflow requirements."
             return "Acknowledged on the service constraint and operational friction."
         elif dom == "design":
             if layer == LayerType.UPSTREAM_STATE:
@@ -456,4 +498,6 @@ class StateMachineEngine:
         else:
             if layer == LayerType.UPSTREAM_STATE:
                 return "That sounds like a heavy load to carry, especially when energy and reserves are already stretched thin."
-            return "That sounds like a real weight to carry. I hear the tension in that."
+            if is_pragmatic_action(text):
+                return "Understood on the practical goal and execution plan."
+            return "Understood on the situation and where things stand."

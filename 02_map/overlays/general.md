@@ -10,7 +10,7 @@ problem, stuck, confused, frustrated, decision, overwhelmed, challenge, option, 
 - **Primary Observer (3rd Position):** Objective observer viewing only the observable sequence of events.
 - **Counterparty (2nd Position):** Counterparty experiencing the external effects of the situation.
 - **Evidence Sources:** Concrete observable actions, timestamped events, verifiable outcomes.
-- **Orientation Rationale:** Let's look at the bedrock facts underneath the interpretation.
+- **Orientation Rationale:** Let's look at the observable facts and constraints underneath the situation.
 
 ## S4 Perspectives
 - **1st Position (Direct Owner):** Your direct perspective with direct agency and realistic boundaries.

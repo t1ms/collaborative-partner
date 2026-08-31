@@ -77,3 +77,52 @@ def test_clean_language_template_formatting():
     q_node = SocraticRouter.route_base_question(det)
     # Verbatim reuse check (David Grove clean language invariant)
     assert "his delay makes me fail" in q_node.text
+
+
+def test_inanimate_unspecified_referent_and_verb():
+    # Inanimate noun "meetings" (Archetype C)
+    det_ref = DetectionNode(
+        utterance_id="utt_c1",
+        pattern=PatternType.UNSPECIFIED_REFERENT,
+        surface="meetings",
+        span=[0, 8],
+    )
+    q_ref = SocraticRouter.route_base_question(det_ref)
+    assert "one actor / one mind" not in q_ref.text
+    assert "which specific parts, people, or instances" in q_ref.text
+    assert "meetings" in q_ref.text
+
+    # Unspecified verb on inanimate system
+    det_verb = DetectionNode(
+        utterance_id="utt_c2",
+        pattern=PatternType.UNSPECIFIED_VERB,
+        surface="blocking",
+        span=[0, 8],
+    )
+    q_verb = SocraticRouter.route_base_question(det_verb)
+    assert "what exactly did they do or say" not in q_verb.text
+    assert "what specific actions, triggers, or steps are happening?" in q_verb.text
+
+
+def test_general_domain_plain_vocab_and_leadership_depth():
+    from thinking_partner.agent.overlays import get_domain_pack
+
+    gen_pack = get_domain_pack("general")
+    assert "observable facts" in gen_pack.vocab_summary
+    assert "bedrock assumptions" not in gen_pack.vocab_summary
+
+    lead_pack = get_domain_pack("leadership")
+    assert "stakeholder alignment" in lead_pack.vocab_summary
+    assert "decision ownership" in lead_pack.vocab_summary
+
+
+def test_pragmatic_hardware_base_question():
+    det_hw = DetectionNode(
+        utterance_id="utt_hw",
+        pattern=PatternType.SIMPLE_DELETION,
+        surface="phone battery",
+        span=[0, 13],
+    )
+    q_hw = SocraticRouter.route_base_question(det_hw, domain="general")
+    assert "symptoms" in q_hw.text.lower() or "degradation" in q_hw.text.lower()
+    assert "bedrock" not in q_hw.text.lower()

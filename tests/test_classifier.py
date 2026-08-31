@@ -71,3 +71,22 @@ def test_char_spans_and_confidence():
     assert d.span[0] >= 0
     assert d.span[1] > d.span[0]
     assert d.confidence >= 0.70
+
+
+def test_pragmatic_action_classifier():
+    from thinking_partner.agent.classifier import is_pragmatic_action
+
+    # Archetype A: Physical repairs & hardware tasks
+    assert is_pragmatic_action("hey i want to open up my phone and change its battery") is True
+    assert is_pragmatic_action("I want to buy a 4K monitor for my desk") is True
+    assert is_pragmatic_action("I need to swap the RAM and install an SSD in my laptop") is True
+
+    # Archetype B: Scripting, scrapers, rewrites, DB migrations
+    assert is_pragmatic_action("I need to write a Python script to scrape 5,000 PDFs every morning") is True
+    assert is_pragmatic_action("I'm going to migrate our database to Postgres 16 this weekend") is True
+    assert is_pragmatic_action("We are rewriting the backend in Go") is True
+    assert is_pragmatic_action("Should we build our own auth service or buy one?") is True
+
+    # Non-pragmatic (pure emotional/relationship/strategic statements)
+    assert is_pragmatic_action("They don't think I am leadership material") is False
+    assert is_pragmatic_action("I feel completely stuck and overwhelmed") is False

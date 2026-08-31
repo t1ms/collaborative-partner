@@ -33,12 +33,12 @@ PATTERN_ROUTER_TABLE: Dict[PatternType, Tuple[SocraticIntent, str, str]] = {
     PatternType.UNSPECIFIED_REFERENT: (
         SocraticIntent.PROBE_ASSUMPTION,
         "unspecified_referent_1",
-        "You said '[surface]' — what made that feel like one actor / one mind?",
+        "When you point at '[surface]', which specific parts, people, or instances are creating the biggest friction?",
     ),
     PatternType.UNSPECIFIED_VERB: (
         SocraticIntent.CLARIFICATION,
         "unspecified_verb_1",
-        "When you say '[surface]', what exactly did they do or say?",
+        "When you say '[surface]', what specific actions, triggers, or steps are happening?",
     ),
     PatternType.CAUSE_EFFECT: (
         SocraticIntent.PROBE_CAUSAL_LINK,
@@ -204,6 +204,18 @@ def sanitize_domain_output(text: str, domain: str = "general") -> str:
     return clean
 
 
+def is_tooling_or_build(text: str) -> bool:
+    """Helper identifying tooling, scripting, hardware, or build-vs-buy problem cues."""
+    t = text.lower()
+    return any(k in t for k in ["code", "vibe", "app", "software", "scan", "scanner", "driver", "kodak", "buy", "build", "script", "tool", "expensive", "costly"])
+
+
+def is_infra_telemetry(text: str) -> bool:
+    """Helper identifying infrastructure, latency, SRE, and telemetry problem cues."""
+    t = text.lower()
+    return any(k in t for k in ["p95", "p99", "latency", "replica", "queue", "database", "deadlock", "timeout", "pagerduty", "grafana", "telemetry"])
+
+
 class SocraticRouter:
     """Deterministic Socratic Router and Deepening Protocol Engine."""
 
@@ -233,6 +245,21 @@ class SocraticRouter:
         framing = select_framing(domain, intent, blend_with=blend_with)
         question_text = template_str.replace("[surface]", detection.surface)
 
+        surface_lower = detection.surface.lower()
+        if any(k in surface_lower for k in ["phone", "battery", "monitor", "screen", "ram", "ssd", "hardware", "desk", "fan"]):
+            intent = SocraticIntent.CLARIFICATION
+            framing = "Let's check the observable device symptoms and pre-flight constraints."
+            question_text = f"For '{detection.surface}', what specific symptoms, degradation, or observations prompted this repair or setup before you begin?"
+        elif domain == "se":
+            if is_tooling_or_build(surface_lower):
+                if detection.pattern in (PatternType.CAUSE_EFFECT, PatternType.COMPARATIVE_DELETION, PatternType.MODAL_NECESSITY):
+                    intent = SocraticIntent.PROBE_ALTERNATIVE
+                    framing = "Let's inspect the build-versus-buy trade-offs before writing code."
+                    if "expensive" in surface_lower or "costly" in surface_lower:
+                        question_text = "Before building custom software because commercial tools are expensive, have you tested existing free utilities or open-source drivers (like NAPS2, native Kodak capture, or Apple Image Capture) for that hardware?"
+                    else:
+                        question_text = f"Before writing custom software for '{detection.surface}', have you tested existing free utilities or open-source drivers (like NAPS2, native Kodak capture, or Apple Image Capture) for that hardware?"
+
         return QuestionNode(
             targets_detection_id=detection.id,
             template_id=template_id,
@@ -260,7 +287,20 @@ class SocraticRouter:
         text = ""
 
         if domain == "se":
-            if detection.pattern == PatternType.MIND_READING:
+            surface_lower = detection.surface.lower()
+            ans_lower = last_answer.lower()
+            is_tooling_or_build = any(
+                k in surface_lower or k in ans_lower
+                for k in ["code", "vibe", "app", "software", "scan", "scanner", "driver", "kodak", "buy", "build", "script", "tool", "hardware"]
+            )
+
+            if is_tooling_or_build:
+                technique = DeepeningTechnique.EVIDENCE_LADDER
+                intent = SocraticIntent.PROBE_ALTERNATIVE
+                framing = "Let's check the build-versus-buy boundary before writing code."
+                text = "Before writing custom software, what have you already tested with existing free utilities or open-source drivers (like NAPS2, Kodak native capture, or Apple Image Capture) for that hardware?"
+
+            elif detection.pattern == PatternType.MIND_READING:
                 if current_cycle == 1:
                     technique = DeepeningTechnique.OBSERVATION_SPLIT
                     framing = "Let's separate what the telemetry shows from the conclusion."

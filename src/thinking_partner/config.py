@@ -28,6 +28,9 @@ DOMAIN_SWITCH_THRESHOLD = float(os.getenv("DOMAIN_SWITCH_THRESHOLD", "0.60"))
 DOMAIN_MARGIN = float(os.getenv("DOMAIN_MARGIN", "0.15"))
 DOMAIN_HYSTERESIS = int(os.getenv("DOMAIN_HYSTERESIS", "2"))
 DOMAIN_BLEND = os.getenv("DOMAIN_BLEND", "true").lower() in ("true", "1", "yes")
+DOMAIN_LLM_ENABLED = os.getenv("DOMAIN_LLM_ENABLED", "true").lower() in ("true", "1", "yes")
+DOMAIN_LLM_WEIGHT = float(os.getenv("DOMAIN_LLM_WEIGHT", "1.5"))
+DOMAIN_LLM_TIMEOUT_MS = int(os.getenv("DOMAIN_LLM_TIMEOUT_MS", "2000"))
 OVERLAY_DIR = Path(__file__).resolve().parent.parent.parent / "02_map" / "overlays"
 
 # Socratic Deepening & Ecology Caps per Domain
@@ -43,4 +46,16 @@ DOMAIN_ECOLOGY_CAPS = {
     "leadership": int(os.getenv("DOMAIN_ECOLOGY_CAPS_LEADERSHIP", "2")),
     "general": int(os.getenv("DOMAIN_ECOLOGY_CAPS_GENERAL", "1")),
 }
+
+# Session Capacity & Rate Limiting Dials
+TURN_MAX_OUTPUT_TOKENS = int(os.getenv("TURN_MAX_OUTPUT_TOKENS", "1024"))
+SESSION_MAX_TURNS = int(os.getenv("SESSION_MAX_TURNS", "40"))
+SESSION_MAX_OUTPUT_TOKENS = int(os.getenv("SESSION_MAX_OUTPUT_TOKENS", "40000"))
+RATE_LIMIT_TURNS_PER_MIN = int(os.getenv("RATE_LIMIT_TURNS_PER_MIN", "10"))
+
+# Crisis & Urgency Triage Dials
+CRISIS_ENABLED = os.getenv("CRISIS_ENABLED", "true").lower() in ("true", "1", "yes")
+URGENCY_ENABLED = os.getenv("URGENCY_ENABLED", "true").lower() in ("true", "1", "yes")
+
+
 

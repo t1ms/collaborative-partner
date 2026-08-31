@@ -1,22 +1,36 @@
 """FastAPI Server exposing the Collaborative Thinking Partner REST API and Split-Pane Web UI."""
 
+import time
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from .agent.models import ProblemGraph, StatePhase
 from .agent.orchestrator import ThinkingPartnerOrchestrator
 from .graph.store import ProblemGraphStore
 from .graph.taste_bank import TasteBank
 from .tools.ingest_source import SourceIngestionTool
+from .config import SESSION_MAX_TURNS, SESSION_MAX_OUTPUT_TOKENS, RATE_LIMIT_TURNS_PER_MIN
+
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    llm_status = "Real Gemini LLM" if orchestrator.use_real_llm else "Deterministic Mock Engine"
+    print(f"=== Collaborative Thinking Partner Started ===")
+    print(f"Engine: {llm_status} (use_real_llm={orchestrator.use_real_llm})")
+    print(f"Vertex AI: {orchestrator.use_vertex} | API Key Loaded: {bool(orchestrator.api_key)}")
+    print(f"=============================================")
+    yield
 
 app = FastAPI(
     title="Collaborative Thinking Partner API",
     description="Deterministic Socratic Problem-Clarification Engine with Problem Graph & Live ADR Mutation",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 store = ProblemGraphStore()
@@ -28,17 +42,39 @@ WEB_DIR = Path(__file__).resolve().parent / "web"
 if WEB_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
 
+from pydantic import BaseModel, Field, field_validator
+
+ALLOWED_SOURCE_TYPES = {
+    "se", "design", "leadership", "general",
+    "repo", "github", "code", "log", "metrics", "telemetry", "trace",
+    "figma", "wireframe", "prototype", "user", "ux",
+    "1-on-1", "slack", "meeting", "roadmap", "stakeholder", "exec"
+}
+
 
 class ChatRequest(BaseModel):
     session_id: Optional[str] = None
-    message: str
+    message: str = Field(..., max_length=2000)
     user_id: str = "default_user"
+    source_type: Optional[str] = None
+
+    @field_validator("source_type")
+    @classmethod
+    def validate_source_type(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            normalized = v.strip().lower()
+            if normalized not in ALLOWED_SOURCE_TYPES:
+                raise ValueError(
+                    f"Invalid source_type '{v}'. Must be one of: {', '.join(sorted(ALLOWED_SOURCE_TYPES))}"
+                )
+            return normalized
+        return v
 
 
 class IngestRequest(BaseModel):
     session_id: Optional[str] = None
     source_name: str
-    raw_text: str
+    raw_text: str = Field(..., max_length=10000)
 
 
 @app.get("/")
@@ -85,11 +121,55 @@ def get_session(session_id: str):
 
 @app.post("/api/chat")
 def chat(req: ChatRequest):
-    """Executes a Socratic turn."""
+    """Executes a Socratic turn with rate limiting and session capacity protection."""
     graph = store.get_or_create(req.session_id)
 
+    # 1. Rate Limiting Check (turns per minute)
+    now = time.time()
+    recent_turns = [t for t in graph.turn_timestamps if now - t < 60.0]
+    if len(recent_turns) >= RATE_LIMIT_TURNS_PER_MIN:
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded. Please take a breath and try again shortly.",
+            headers={"Retry-After": "60"},
+        )
+
+    # Pre-turn timestamp claim to prevent race-condition concurrency bursts
+    graph.turn_timestamps.append(now)
+    # Keep only the last 60 timestamps to prevent memory growth over time
+    if len(graph.turn_timestamps) > 60:
+        graph.turn_timestamps = graph.turn_timestamps[-60:]
+    store.save(graph)
+
+    # 2. Session Turn & Token Capacity Enforcement (soft landing with ADR capture)
+    user_turns = len([u for u in graph.utterances if u.speaker == "user"])
+    if user_turns >= SESSION_MAX_TURNS or graph.total_output_tokens >= SESSION_MAX_OUTPUT_TOKENS:
+        if graph.current_phase != StatePhase.S6_DONE:
+            graph.current_phase = StatePhase.S6_DONE
+            updated_artifact = orchestrator.mutation_tool.mutate(graph)
+            store.save(graph)
+        else:
+            updated_artifact = graph.artifacts[-1] if graph.artifacts else None
+
+        limit_msg = (
+            f"You've reached the session capacity (~{SESSION_MAX_TURNS} turns) — "
+            "let's capture this ADR and start a fresh thread for the next angle. Your work is saved."
+        )
+        return {
+            "session_id": graph.session_id,
+            "response": limit_msg,
+            "current_phase": graph.current_phase,
+            "current_domain": graph.current_domain,
+            "blend_with": graph.blend_with,
+            "active_detection_id": graph.active_detection_id,
+            "graph": graph,
+            "latest_artifact": updated_artifact,
+            "limit_hit": True,
+            "turns_remaining": 0,
+        }
+
     response_text, updated_graph, updated_artifact = orchestrator.process_turn(
-        graph, req.message
+        graph, req.message, source_type=req.source_type
     )
 
     # If completed S6, record self-improvement in taste bank
@@ -99,6 +179,8 @@ def chat(req: ChatRequest):
         taste_bank.record_session_completion(req.user_id, resolved_count, deepen_count)
 
     store.save(updated_graph)
+    user_turns_after = len([u for u in updated_graph.utterances if u.speaker == "user"])
+    turns_remaining = max(0, SESSION_MAX_TURNS - user_turns_after)
 
     return {
         "session_id": updated_graph.session_id,
@@ -109,6 +191,7 @@ def chat(req: ChatRequest):
         "active_detection_id": updated_graph.active_detection_id,
         "graph": updated_graph,
         "latest_artifact": updated_artifact,
+        "turns_remaining": turns_remaining,
     }
 
 

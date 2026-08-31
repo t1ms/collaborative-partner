@@ -12,6 +12,7 @@ Distilled modules from foundational cognitive modeling and empirical conversatio
 | [`conversational-dynamics.md`](conversational-dynamics.md) | **EMMI (2024)**; **CARE (2026)**; **PST-MI (2025)**; **Grice (1975)**; **Hayakawa (1949)** | Conversational verbosity dial, fluid turn architecture, and human working alliance. |
 | [`VERIFICATION.md`](VERIFICATION.md) | **Witkowski (2010)**; **Passmore & Rowson (2018)**; **Sturt et al. (2012)** | De-branding protocol, empirical boundaries, and scientific defensibility. |
 | [`demo-dialogues.md`](demo-dialogues.md) | **Bandler (1975)** transcripts; **Paul & Elder (2006)** Socratic cases | Gold-standard test cases and evaluation dialogue scripts. |
+| [`CRISIS.md`](CRISIS.md) | **Clinical Safety Boundaries**; WHO / NZ 1737 / US 988 / UK 116123 | Ethical safety bounds, crisis handoffs, and non-therapeutic invariants. |
 
 ### Domain Overlay Packs (`02_map/overlays/`)
 

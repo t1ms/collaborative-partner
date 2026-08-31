@@ -15,6 +15,7 @@ Build design for the Collaborative Thinking Partner. All decisions reflect the d
 | `gcp-deployment-plan.md` | GCP Cloud Run deployment, Vertex AI integration, containerization, and video blueprint | Created 2026-08-31 |
 | `validation-corpus.md` | Real HN/Reddit corpus checks + gap analysis (mind_reading) | — |
 | `worked-example-leadership-delivery.md` | Worked example delivery walkthrough | — |
+| `CRISIS.md` | 3-Tier Urgency vs Crisis Triage, sliding window, soft lock, and data minimization | Created 2026-08-31 |
 
 **Archives (never delete, per user directive):** `../_archive/agent-system/2026-08-28_pre-socratic/`, `../_archive/agent-system/2026-08-28_pre-deepening/`, `../_archive/agent-system/2026-08-28_variant-b/`
 
