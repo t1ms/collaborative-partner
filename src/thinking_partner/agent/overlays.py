@@ -42,7 +42,8 @@ FALLBACK_PACKS: Dict[str, DomainPack] = {
             "rfc", "microservice", "cluster", "kubernetes", "k8s",
             "code", "vibe code", "script", "app", "software", "scanner", "driver",
             "hardware", "tooling", "build-vs-buy", "automation", "batch", "open source",
-            "library", "cli", "sdk", "integration", "ocr", "api"
+            "library", "cli", "sdk", "integration", "ocr", "api",
+            "gcp", "cloud", "cloud run", "docker", "serverless", "devops", "upload", "backend", "infrastructure", "deploy", "deployment"
         ],
         primary_observer="SRE / telemetry observer with only metrics, traces, and black-box logs",
         counterparty="Downstream service caller or upstream dependencies with hard timeout contracts",

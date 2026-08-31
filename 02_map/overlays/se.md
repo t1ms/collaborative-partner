@@ -6,7 +6,7 @@
 - **Artifact Title:** Problem Architecture Decision Record (ADR)
 
 ## Trigger Keywords
-p95, p99, latency, replica, replicas, pagerduty, grafana, checkout api, queue, queues, 3x load, load test, throughput, rps, database, postgres, redis, kafka, deadlock, timeout, retry, failover, bottleneck, telemetry, trace, traces, span, oom, memory leak, cpu spike, deploy, incident, sla, slo, rfc, microservice, cluster, kubernetes, k8s, code, vibe code, script, app, software, scanner, driver, hardware, tooling, build-vs-buy, automation, batch, open source, library, cli, sdk, integration, ocr, api
+p95, p99, latency, replica, replicas, pagerduty, grafana, checkout api, queue, queues, 3x load, load test, throughput, rps, database, postgres, redis, kafka, deadlock, timeout, retry, failover, bottleneck, telemetry, trace, traces, span, oom, memory leak, cpu spike, deploy, deployment, incident, sla, slo, rfc, microservice, cluster, kubernetes, k8s, code, vibe code, script, app, software, scanner, driver, hardware, tooling, build-vs-buy, automation, batch, open source, library, cli, sdk, integration, ocr, api, gcp, cloud, cloud run, docker, serverless, devops, upload, backend, infrastructure
 
 ## Framing Angles
 - **Primary Observer (3rd Position):** SRE / telemetry observer with only metrics, traces, and black-box logs.
