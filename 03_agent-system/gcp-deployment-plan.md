@@ -60,7 +60,7 @@ gcloud run deploy collaborative-thinking-partner \
   --region us-central1 \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars USE_VERTEX_AI=true,GCP_PROJECT_ID=YOUR_PROJECT_ID,GCP_REGION=us-central1,GEMINI_MODEL=gemini-3.7-flash,STORAGE_MODE=memory
+  --set-env-vars USE_VERTEX_AI=true,GCP_PROJECT_ID=YOUR_PROJECT_ID,GCP_REGION=global,GEMINI_MODEL=gemini-3.7-flash,STORAGE_MODE=memory
 ```
 
 *Flags explained:*
