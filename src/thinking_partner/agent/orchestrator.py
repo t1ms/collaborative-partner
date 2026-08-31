@@ -415,8 +415,9 @@ class ThinkingPartnerOrchestrator:
             llm_hint, llm_conf = self._classify_domain_llm(clean_input)
 
         # Query Gemini for structured Socratic recommendation if real LLM is available
+        # Skip LLM call entirely if session is already concluded (S6_DONE re-entry)
         llm_recommendation = None
-        if self.use_real_llm and self.client:
+        if graph.current_phase != StatePhase.S6_DONE and self.use_real_llm and self.client:
             llm_recommendation = self._generate_socratic_turn(graph, clean_input)
 
         # Advance state machine with guardrail evaluation & veto logic
@@ -429,8 +430,12 @@ class ThinkingPartnerOrchestrator:
             llm_recommendation=llm_recommendation,
         )
 
-        # Final response synthesis: use LLM output if present, sanitized with domain constraints
-        if llm_recommendation and llm_recommendation.response_text:
+        # Final response synthesis: S6_DONE always uses the state machine's synthesized ADR
+        if new_phase == StatePhase.S6_DONE:
+            # Terminal override: the state machine's base_response IS the final ADR.
+            # Never let a stale LLM question overwrite the completed synthesis.
+            final_response = sanitize_domain_output(clean_latex(base_response), graph.current_domain)
+        elif llm_recommendation and llm_recommendation.response_text:
             raw_text = clean_latex(llm_recommendation.response_text)
             raw_text = re.sub(r"^(clarification|probe-[a-z-]+|meta-cognition):\s*", "", raw_text, flags=re.IGNORECASE)
             final_response = sanitize_domain_output(raw_text, graph.current_domain)

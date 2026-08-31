@@ -656,6 +656,14 @@ class StateMachineEngine:
         """S5_ECOLOGY -> S6_DONE: Final synthesis. Pivots on disengagement."""
         # Disengagement pivot: user stuck on abstract trade-off, offer concrete version
         if SocraticRouter.is_disengaged(utt.text):
+            graph.s5_disengagement_count += 1
+
+            # One-strike rule: second disengagement in S5 -> bail to S6_DONE
+            if graph.s5_disengagement_count >= 2:
+                graph.current_phase = StatePhase.S6_DONE
+                return self._handle_s6_done(graph, utt, llm_recommendation)
+
+            # First disengagement: pivot to a concrete version of the question
             if graph.current_domain == "se":
                 pivot_q = "Let's make this concrete — if you ship this fix tomorrow, what is the very first thing that could go wrong in production?"
             elif graph.current_domain == "design":
@@ -718,6 +726,14 @@ class StateMachineEngine:
         llm_recommendation: Optional[LLMTurnRecommendation] = None,
     ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """S6_DONE: Synthesizes Problem Graph into a completed Decision Record."""
+        # Graceful close: if ADR was already delivered, return short ack
+        s6_turns = graph.phase_turn_counts.get(StatePhase.S6_DONE.value, 0)
+        if s6_turns > 1:
+            return StatePhase.S6_DONE, None, (
+                "Session complete. Your Problem Record is above — "
+                "revisit it anytime you need to recalibrate."
+            )
+
         pos = graph.outcome_predicates.get(OutcomePredicateKey.POSITIVE)
         sens = graph.outcome_predicates.get(OutcomePredicateKey.SENSORY)
 

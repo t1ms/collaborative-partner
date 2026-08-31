@@ -324,3 +324,85 @@ def test_s5_disengagement_pivot():
     assert q is not None
     assert q.template_id == "ecology_disengage_pivot"
     assert "concrete" in resp.lower()
+
+
+def test_s5_one_strike_disengagement_bails_to_s6():
+    """Second disengagement in S5 should fast-path to S6_DONE instead of looping."""
+    engine = StateMachineEngine()
+    graph = ProblemGraph()
+
+    # Advance to S5_ECOLOGY
+    engine.advance(graph, "i keep waking up and cant fall back to sleep")
+    engine.advance(graph, "if i cant sleep my day becomes very sluggish, i cant work properly")
+    engine.advance(graph, "have enough energy to do what i need to do everyday")
+    engine.advance(graph, "yes and no, there are nights i just cant fall asleep")
+    engine.advance(graph, "well sometimes i get ideas i cant stop thinking about")
+    engine.advance(graph, "I see that stress patterns disrupt my sleep.")
+    assert graph.current_phase == StatePhase.S5_ECOLOGY
+
+    # First disengagement: should pivot (stay in S5)
+    phase1, q1, resp1 = engine.advance(graph, "i dont know")
+    assert phase1 == StatePhase.S5_ECOLOGY
+    assert graph.s5_disengagement_count == 1
+
+    # Second disengagement: should bail to S6_DONE
+    phase2, q2, resp2 = engine.advance(graph, "im not sure what you mean")
+    assert phase2 == StatePhase.S6_DONE, "Second disengagement should fast-path to S6_DONE"
+    assert graph.s5_disengagement_count == 2
+
+
+def test_s6_graceful_close_on_reentry():
+    """After ADR is delivered in S6, subsequent turns should return a short ack, not the full ADR."""
+    engine = StateMachineEngine()
+    graph = ProblemGraph()
+
+    # Full pipeline to S6_DONE
+    engine.advance(graph, "They don't think I am capable of leading the project.")
+    engine.advance(graph, "The director told me yesterday that I should focus on IC tasks instead.")
+    engine.advance(graph, "I want to present the technical roadmap directly to the executive committee next quarter.")
+    engine.advance(graph, "Yes, by defining the milestone schedule myself.")
+    engine.advance(graph, "The director formally signs off on the sprint backlog.")
+    engine.advance(graph, "From the executive perspective, they want de-risked delivery with clear milestone metrics.")
+    engine.advance(graph, "The only trade-off is 5 hours a week away from pure coding, which is completely acceptable.")
+    engine.advance(graph, "The secondary trade-off is shifting 10% sprint bandwidth to documentation. Let's capture this.")
+    assert graph.current_phase == StatePhase.S6_DONE
+
+    # First turn in S6: full ADR
+    phase1, q1, resp1 = engine.advance(graph, "thanks")
+    assert phase1 == StatePhase.S6_DONE
+    assert "Problem Deconstructed" in resp1 or "Session complete" in resp1
+
+    # Second turn in S6: should get graceful close, not full ADR repeated
+    phase2, q2, resp2 = engine.advance(graph, "thanks again")
+    assert phase2 == StatePhase.S6_DONE
+    assert "Session complete" in resp2
+    assert "Problem Deconstructed" not in resp2, "Should not re-dump the full ADR"
+
+
+def test_s5_ecology_turn_cap_cannot_be_bypassed():
+    """S5 ecology turn cap (max 2) should force advance to S6_DONE even when LLM recommends STAY."""
+    from thinking_partner.agent.models import LLMTurnRecommendation, PhaseAction
+    engine = StateMachineEngine()
+    graph = ProblemGraph()
+
+    # Advance to S5_ECOLOGY
+    engine.advance(graph, "i keep waking up and cant fall back to sleep")
+    engine.advance(graph, "if i cant sleep my day becomes very sluggish, i cant work properly")
+    engine.advance(graph, "have enough energy to do what i need to do everyday")
+    engine.advance(graph, "yes and no, there are nights i just cant fall asleep")
+    engine.advance(graph, "well sometimes i get ideas i cant stop thinking about")
+    engine.advance(graph, "I see that stress patterns disrupt my sleep.")
+    assert graph.current_phase == StatePhase.S5_ECOLOGY
+
+    # Simulate LLM recommending STAY for 3 consecutive turns
+    stay_rec = LLMTurnRecommendation(
+        phase_action=PhaseAction.STAY,
+        response_text="What is your single trigger tonight?",
+    )
+
+    # Turn 1 in S5 (already counted from advance above, so phase_turn_counts may be 1+)
+    engine.advance(graph, "meditation and breathing", llm_recommendation=stay_rec)
+    engine.advance(graph, "deep breathing helps", llm_recommendation=stay_rec)
+
+    # By now we should have hit S5 max (2 turns) and been forced to S6_DONE
+    assert graph.current_phase == StatePhase.S6_DONE, "S5 ecology turn cap should force advance to S6_DONE"

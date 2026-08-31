@@ -216,6 +216,7 @@ class ProblemGraph(BaseModel):
     total_output_tokens: int = 0
     turn_timestamps: List[float] = Field(default_factory=list)
     crisis_lock_turns: int = 0
+    s5_disengagement_count: int = 0
     created_at: float = Field(default_factory=time.time)
     updated_at: float = Field(default_factory=time.time)
 
