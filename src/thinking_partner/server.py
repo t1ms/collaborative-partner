@@ -4,9 +4,10 @@ import time
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from .agent.models import ProblemGraph, StatePhase
 from .agent.orchestrator import ThinkingPartnerOrchestrator
@@ -33,6 +34,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 store = ProblemGraphStore()
 taste_bank = TasteBank()
 orchestrator = ThinkingPartnerOrchestrator()
@@ -41,8 +50,6 @@ ingestion_tool = SourceIngestionTool()
 WEB_DIR = Path(__file__).resolve().parent / "web"
 if WEB_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
-
-from pydantic import BaseModel, Field, field_validator
 
 ALLOWED_SOURCE_TYPES = {
     "se", "design", "leadership", "general",

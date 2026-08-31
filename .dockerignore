@@ -12,5 +12,7 @@ tests/
 01_source/
 02_map/
 03_agent-system/
+data/sessions/
+data/tastes/
 .env
 .env.*

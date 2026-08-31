@@ -8,7 +8,7 @@ Scientific Lineage & Attribution:
 """
 
 import re
-from typing import Optional, Tuple, Dict
+from typing import Any, Dict, List, Optional, Tuple, Union
 from .models import (
     PatternType,
     SocraticIntent,
