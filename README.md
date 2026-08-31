@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.14-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
 [![Google Gen AI](https://img.shields.io/badge/Model-Gemini_3.7_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
-[![Tests](https://img.shields.io/badge/Tests-27%20Passed-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/Tests-66%20Passed-brightgreen.svg)](#)
 [![License](https://img.shields.io/badge/License-Apache_2.0_%2F_CC_BY_4.0-blue.svg)](LICENSE)
 
 > **A Socratic Problem-Clarification Engine.**  
@@ -79,7 +79,7 @@ Open **[http://localhost:8000](http://localhost:8000)** to view the live split-p
 
 ## 🧪 Testing
 
-Run the full automated test suite (27/27 unit & integration tests):
+Run the full automated test suite (66/66 unit & integration tests):
 ```bash
 PYTHONPATH=src pytest tests/ -v
 ```
