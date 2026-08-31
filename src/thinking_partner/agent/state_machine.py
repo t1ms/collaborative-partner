@@ -1,4 +1,4 @@
-"""5-Phase Operational State Machine with S2 Deepening Loop and Problem Graph Transitions.
+"""5-Phase Operational State Machine with S2 Deepening Loop, Guardrail Architecture, and Problem Graph Transitions.
 
 Scientific Lineage & Attribution:
 - TOTE Cybernetic Feedback Architecture: Miller, Galanter, & Pribram (1960)
@@ -7,9 +7,12 @@ Scientific Lineage & Attribution:
 - 5-Phase Problem-Clarification Pipeline: Grounded in 02_map/five-phase-pipeline.md
 """
 
+import re
 from typing import Optional, Tuple, List, Dict
 from .models import (
     StatePhase,
+    PhaseAction,
+    LLMTurnRecommendation,
     ProblemGraph,
     UtteranceNode,
     DetectionNode,
@@ -40,12 +43,115 @@ from ..config import DOMAIN_MAX_DEEPEN, DOMAIN_ECOLOGY_CAPS
 
 CAPTURE_CUES = ("capture", "close this", "mark done", "that's enough", "capture this", "let's capture")
 
+# Layer 1: Turn Budgets (Hard Caps per phase: min_turns, max_turns)
+PHASE_TURN_BUDGETS: Dict[StatePhase, Tuple[int, int]] = {
+    StatePhase.S0_IDLE: (0, 0),
+    StatePhase.S1_INGEST: (0, 1),
+    StatePhase.S2_CLARIFY: (1, 5),   # must ask at least 1, max 5 turns
+    StatePhase.S3_OUTCOME: (1, 3),   # min 1, max 3 turns
+    StatePhase.S4_ANGLE: (0, 2),     # skippable (min 0), max 2 turns
+    StatePhase.S5_ECOLOGY: (1, 2),   # min 1, max 2 turns
+    StatePhase.S6_DONE: (1, 1),      # exactly 1 synthesis turn
+}
+
+# Layer 2: Required Phase Gates (Non-skippable phases)
+MANDATORY_PHASES = {
+    StatePhase.S2_CLARIFY,
+    StatePhase.S3_OUTCOME,
+    StatePhase.S5_ECOLOGY,
+    StatePhase.S6_DONE,
+}
+
+SESSION_HARD_MAX_TURNS = 15
+
+
+def check_anti_spiral_brake(graph: ProblemGraph, current_phase: StatePhase) -> bool:
+    """
+    Layer 4: Anti-Spiral Brake.
+    Detects if the conversation is stalling/looping within the current phase.
+    Returns True if forced advance is required.
+    """
+    # Check user utterance semantic overlap across last 3 turns
+    user_utts = [u.text for u in graph.utterances if u.speaker == "user"]
+    if len(user_utts) >= 3:
+        words_last = set(re.findall(r"\b\w{3,}\b", user_utts[-1].lower()))
+        words_prev = set(re.findall(r"\b\w{3,}\b", user_utts[-2].lower()))
+        words_prev2 = set(re.findall(r"\b\w{3,}\b", user_utts[-3].lower()))
+        if words_last and words_prev and words_prev2:
+            overlap1 = len(words_last & words_prev) / max(1, len(words_last | words_prev))
+            overlap2 = len(words_last & words_prev2) / max(1, len(words_last | words_prev2))
+            if overlap1 >= 0.60 and overlap2 >= 0.60:
+                return True
+
+    # Check intent repetition: 3 consecutive questions share exact same intent in current phase
+    if len(graph.questions) >= 3:
+        if (
+            graph.questions[-1].socratic_intent == graph.questions[-2].socratic_intent == graph.questions[-3].socratic_intent
+        ):
+            turns = graph.phase_turn_counts.get(current_phase.value, 0)
+            if turns >= 3:
+                return True
+
+    return False
+
 
 class StateMachineEngine:
-    """Manages phase transitions, detection priority queues, and the S2 deepening ladder."""
+    """Manages phase transitions, detection priority queues, and the S2 deepening ladder with LLM veto guardrails."""
 
     def __init__(self, classifier: Optional[MetaModelClassifier] = None):
         self.classifier = classifier or MetaModelClassifier()
+
+    def resolve_guardrail_action(
+        self,
+        graph: ProblemGraph,
+        recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> PhaseAction:
+        """
+        Evaluates the proposed phase action against the 6-layer guardrail architecture:
+        1. Turn Budgets (Hard Caps)
+        2. Required Phase Gates
+        3. Anti-Spiral Brake
+        4. Total Session Limit
+        """
+        current_phase = graph.current_phase
+        turns_in_phase = graph.phase_turn_counts.get(current_phase.value, 0)
+        total_user_turns = len([u for u in graph.utterances if u.speaker == "user"])
+
+        # Hard session cap check
+        if total_user_turns >= SESSION_HARD_MAX_TURNS and current_phase != StatePhase.S6_DONE:
+            return PhaseAction.ADVANCE
+
+        min_turns, max_turns = PHASE_TURN_BUDGETS.get(current_phase, (1, 5))
+
+        # Deterministic default when no LLM recommendation is present
+        if recommendation is None:
+            if turns_in_phase >= max_turns:
+                return PhaseAction.ADVANCE
+            return PhaseAction.ADVANCE
+
+        proposed = recommendation.phase_action
+
+        # Layer 1: Turn Budget Veto
+        if turns_in_phase >= max_turns:
+            # Force advance if max turns reached (veto stay)
+            effective = PhaseAction.ADVANCE
+        elif turns_in_phase < min_turns and proposed in (PhaseAction.ADVANCE, PhaseAction.SKIP_NEXT):
+            # Force stay if min turns not reached (veto premature advance)
+            effective = PhaseAction.STAY
+        else:
+            effective = proposed
+
+        # Layer 2: Required Phase Gates
+        if effective == PhaseAction.SKIP_NEXT:
+            # Only S4 (Angle) is skippable when transitioning from S3_OUTCOME
+            if current_phase != StatePhase.S3_OUTCOME:
+                effective = PhaseAction.ADVANCE
+
+        # Layer 4: Anti-Spiral Brake
+        if effective == PhaseAction.STAY and check_anti_spiral_brake(graph, current_phase):
+            effective = PhaseAction.ADVANCE
+
+        return effective
 
     def advance(
         self,
@@ -54,9 +160,10 @@ class StateMachineEngine:
         source_type: Optional[str] = None,
         llm_hint: Optional[str] = None,
         llm_conf: float = 0.0,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
     ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """
-        Processes a user turn through the state machine.
+        Processes a user turn through the state machine with guardrail veto rules.
         Returns: (new_phase, next_question_node, agent_response_text)
         """
         # Classify and track domain
@@ -76,32 +183,45 @@ class StateMachineEngine:
         utt = UtteranceNode(text=user_input, speaker="user")
         graph.utterances.append(utt)
 
+        # Increment phase turn count & track history
+        curr_phase_str = graph.current_phase.value
+        graph.phase_turn_counts[curr_phase_str] = graph.phase_turn_counts.get(curr_phase_str, 0) + 1
+        graph.phase_history.append(curr_phase_str)
+
+        # Evaluate guardrails and determine effective action
+        effective_action = self.resolve_guardrail_action(graph, llm_recommendation)
+
         # 1. State Phase Router
         if graph.current_phase == StatePhase.S0_IDLE:
-            phase, q, resp = self._handle_s0_to_s1(graph, utt)
+            phase, q, resp = self._handle_s0_to_s1(graph, utt, llm_recommendation)
 
         elif graph.current_phase in (StatePhase.S1_INGEST, StatePhase.S2_CLARIFY):
-            phase, q, resp = self._handle_s2_clarify(graph, utt)
+            phase, q, resp = self._handle_s2_clarify(graph, utt, effective_action, llm_recommendation)
 
         elif graph.current_phase == StatePhase.S3_OUTCOME:
-            phase, q, resp = self._handle_s3_outcome(graph, utt)
+            phase, q, resp = self._handle_s3_outcome(graph, utt, effective_action, llm_recommendation)
 
         elif graph.current_phase == StatePhase.S4_ANGLE:
-            phase, q, resp = self._handle_s4_angle(graph, utt)
+            phase, q, resp = self._handle_s4_angle(graph, utt, effective_action, llm_recommendation)
 
         elif graph.current_phase == StatePhase.S5_ECOLOGY:
-            phase, q, resp = self._handle_s5_ecology(graph, utt)
+            phase, q, resp = self._handle_s5_ecology(graph, utt, effective_action, llm_recommendation)
 
         elif graph.current_phase == StatePhase.S6_DONE:
-            phase, q, resp = self._handle_s6_done(graph, utt)
+            phase, q, resp = self._handle_s6_done(graph, utt, llm_recommendation)
         else:
             phase, q, resp = graph.current_phase, None, "Session concluded."
 
-        # Sanitize final deterministic response
+        # Layer 5: Domain boundary enforcement & sanitization
         sanitized_resp = sanitize_domain_output(resp, graph.current_domain)
         return phase, q, sanitized_resp
 
-    def _handle_s0_to_s1(self, graph: ProblemGraph, utt: UtteranceNode) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+    def _handle_s0_to_s1(
+        self,
+        graph: ProblemGraph,
+        utt: UtteranceNode,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """S0_IDLE -> S1_INGEST -> S2_CLARIFY"""
         graph.current_phase = StatePhase.S1_INGEST
         detections = self.classifier.classify(utt.text, utt.id, prev_domain=graph.current_domain)
@@ -130,13 +250,11 @@ class StateMachineEngine:
             q_node = SocraticRouter.route_base_question(target_det, domain=graph.current_domain, blend_with=graph.blend_with)
             graph.questions.append(q_node)
             graph.edges.append(GraphEdge(source_id=target_det.id, target_id=q_node.id, edge_type="detection->question"))
-            
-            # Format turn: Acknowledgement + Framing + Socratic Question
+
             ack = self._craft_acknowledgement(utt.text, target_det.layer, graph.current_domain)
             response_text = f"{ack}\n\n{q_node.framing_string}\n\n{q_node.text}"
             return StatePhase.S2_CLARIFY, q_node, response_text
         else:
-            # No specific pattern matched: check pragmatic action or open clarification
             if is_pragmatic_action(utt.text):
                 framing = "Let's check the pre-flight requirements and triggers before executing."
                 if any(k in utt.text.lower() for k in ["phone", "battery", "monitor", "screen", "ram", "hardware"]):
@@ -159,12 +277,18 @@ class StateMachineEngine:
             response_text = f"{ack}\n\n{framing}\n\n{q_text}"
             return StatePhase.S2_CLARIFY, q_node, response_text
 
-    def _handle_s2_clarify(self, graph: ProblemGraph, utt: UtteranceNode) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+    def _handle_s2_clarify(
+        self,
+        graph: ProblemGraph,
+        utt: UtteranceNode,
+        effective_action: PhaseAction = PhaseAction.ADVANCE,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """S2_CLARIFY: Evaluates answers against deepening protocol or moves to next detection / S3."""
         last_q = graph.questions[-1] if graph.questions else None
         target_det = next((d for d in graph.detections if d.id == graph.active_detection_id), None)
 
-        # If we were in open clarification mode (no active detection), ingest detections from this detailed statement
+        # If in open clarification mode, ingest detections from detailed statement
         if not target_det and not any(not d.resolved for d in graph.detections):
             new_detections = self.classifier.classify(utt.text, utt.id, prev_domain=graph.current_domain)
             for new_d in new_detections:
@@ -192,12 +316,23 @@ class StateMachineEngine:
                 target_det.resolved_by_answer_id = ans_node.id
                 ans_node.resolves_detection = True
                 graph.edges.append(GraphEdge(source_id=ans_node.id, target_id=target_det.id, edge_type="answer->resolution"))
-                graph.active_detection_id = None
             for d in graph.detections:
                 d.resolved = True
             graph.current_phase = StatePhase.S3_OUTCOME
             graph.active_detection_id = None
-            return self._init_s3_outcome(graph)
+            return self._init_s3_outcome(graph, llm_recommendation)
+
+        # If LLM recommended advancing and guardrails approved
+        if effective_action == PhaseAction.ADVANCE and llm_recommendation is not None:
+            if target_det:
+                target_det.resolved = True
+                target_det.resolved_by_answer_id = ans_node.id
+                ans_node.resolves_detection = True
+            for d in graph.detections:
+                d.resolved = True
+            graph.current_phase = StatePhase.S3_OUTCOME
+            graph.active_detection_id = None
+            return self._init_s3_outcome(graph, llm_recommendation)
 
         # Deepening Check (domain-aware cycles on closure)
         max_cycles = DOMAIN_MAX_DEEPEN.get(graph.current_domain, 2)
@@ -209,7 +344,6 @@ class StateMachineEngine:
             graph.questions.append(deepen_q)
             graph.edges.append(GraphEdge(source_id=target_det.id, target_id=deepen_q.id, edge_type="detection->question"))
 
-            # Deepening voice rule: acknowledge fast closure with curiosity
             if graph.current_domain == "se":
                 ack = "We landed on that quickly. Let's trace the underlying service data."
             elif graph.current_domain == "design":
@@ -239,12 +373,31 @@ class StateMachineEngine:
             response_text = f"{ack}\n\n{next_q.framing_string}\n\n{next_q.text}"
             return StatePhase.S2_CLARIFY, next_q, response_text
 
-        # All detections clarified! Transition to S3_OUTCOME
+        # If LLM recommended staying and guardrails approved STAY
+        if effective_action == PhaseAction.STAY and llm_recommendation is not None:
+            framing = select_framing(graph.current_domain, SocraticIntent.CLARIFICATION, blend_with=graph.blend_with)
+            q_text = "What specific factors, symptoms, or system triggers seem to drive this pattern?"
+            q_node = QuestionNode(
+                template_id="s2_deepen_stay",
+                socratic_intent=llm_recommendation.socratic_intent if llm_recommendation else SocraticIntent.CLARIFICATION,
+                framing_string=framing,
+                text=q_text,
+                domain=graph.current_domain,
+                blend_with=graph.blend_with,
+            )
+            graph.questions.append(q_node)
+            return StatePhase.S2_CLARIFY, q_node, f"{framing}\n\n{q_text}"
+
+        # All detections clarified and ready to advance -> Transition to S3_OUTCOME
         graph.current_phase = StatePhase.S3_OUTCOME
         graph.active_detection_id = None
-        return self._init_s3_outcome(graph)
+        return self._init_s3_outcome(graph, llm_recommendation)
 
-    def _init_s3_outcome(self, graph: ProblemGraph) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+    def _init_s3_outcome(
+        self,
+        graph: ProblemGraph,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """Initializes S3 Outcome Architecture (Well-Formed Outcomes)."""
         wfo_keys = [
             OutcomePredicateKey.POSITIVE,
@@ -266,11 +419,7 @@ class StateMachineEngine:
             q_text = "Stated in the positive — what do you actually want to achieve, rather than what you're trying to avoid?"
         q_node = QuestionNode(
             template_id="wfo_positive_1",
-            socratic_intent=SocraticRouter.route_base_question(
-                DetectionNode(utterance_id="none", pattern="modal_necessity", surface="want", span=[0, 0]),
-                domain=graph.current_domain,
-                blend_with=graph.blend_with,
-            ).socratic_intent,
+            socratic_intent=SocraticIntent.PROBE_ALTERNATIVE,
             framing_string=framing,
             text=q_text,
             domain=graph.current_domain,
@@ -280,26 +429,52 @@ class StateMachineEngine:
         response_text = f"We have reached the bedrock of the problem.\n\n{framing}\n\n{q_text}"
         return StatePhase.S3_OUTCOME, q_node, response_text
 
-    def _handle_s3_outcome(self, graph: ProblemGraph, utt: UtteranceNode) -> Tuple[StatePhase, Optional[QuestionNode], str]:
-        """S3_OUTCOME: Populates WFO predicates and drives to S4_ANGLE."""
-        # Find the first unfulfilled predicate
+    def _handle_s3_outcome(
+        self,
+        graph: ProblemGraph,
+        utt: UtteranceNode,
+        effective_action: PhaseAction = PhaseAction.ADVANCE,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+        """S3_OUTCOME: Populates WFO predicates and drives to S4_ANGLE or S5_ECOLOGY (if skipping S4)."""
         pos_node = graph.outcome_predicates.get(OutcomePredicateKey.POSITIVE)
         self_node = graph.outcome_predicates.get(OutcomePredicateKey.SELF_INITIATED)
         sens_node = graph.outcome_predicates.get(OutcomePredicateKey.SENSORY)
 
+        # If LLM recommended skipping S4 (Angle) and guardrails approved
+        if effective_action == PhaseAction.SKIP_NEXT:
+            if pos_node and pos_node.status == "missing":
+                pos_node.statement = utt.text
+                pos_node.status = "drafted"
+            elif self_node and self_node.status == "missing":
+                self_node.statement = utt.text
+                self_node.status = "drafted"
+            elif sens_node and sens_node.status == "missing":
+                sens_node.statement = utt.text
+                sens_node.status = "drafted"
+            return self._init_s5_ecology(graph, llm_recommendation)
+
+        # If LLM recommended advance and we're ready
+        if effective_action == PhaseAction.ADVANCE and llm_recommendation is not None:
+            if pos_node and pos_node.status == "missing":
+                pos_node.statement = utt.text
+                pos_node.status = "drafted"
+            elif self_node and self_node.status == "missing":
+                self_node.statement = utt.text
+                self_node.status = "drafted"
+            elif sens_node and sens_node.status == "missing":
+                sens_node.statement = utt.text
+                sens_node.status = "drafted"
+            return self._init_s4_angle(graph, llm_recommendation)
+
         if pos_node and pos_node.status == "missing":
             pos_node.statement = utt.text
             pos_node.status = "drafted"
-            # Ask Self-Initiated predicate
             framing = select_framing(graph.current_domain, SocraticIntent.PROBE_CAUSAL_LINK, blend_with=graph.blend_with)
             q_text = "Is this outcome within your 100% direct control to initiate and maintain, or does it depend on someone else's action?"
             q_node = QuestionNode(
                 template_id="wfo_self_initiated_1",
-                socratic_intent=SocraticRouter.route_base_question(
-                    DetectionNode(utterance_id="none", pattern="cause_effect", surface="control", span=[0, 0]),
-                    domain=graph.current_domain,
-                    blend_with=graph.blend_with,
-                ).socratic_intent,
+                socratic_intent=SocraticIntent.PROBE_CAUSAL_LINK,
                 framing_string=framing,
                 text=q_text,
                 domain=graph.current_domain,
@@ -311,7 +486,6 @@ class StateMachineEngine:
         elif self_node and self_node.status == "missing":
             self_node.statement = utt.text
             self_node.status = "drafted"
-            # Ask Sensory Evidence predicate
             framing = select_framing(graph.current_domain, SocraticIntent.PROBE_EVIDENCE, blend_with=graph.blend_with)
             if graph.current_domain == "se":
                 all_text = " ".join(u.text.lower() for u in graph.utterances)
@@ -325,11 +499,7 @@ class StateMachineEngine:
                 q_text = "What specific, observable evidence will tell you that you've achieved this — what will you literally see, hear, or measure?"
             q_node = QuestionNode(
                 template_id="wfo_sensory_1",
-                socratic_intent=SocraticRouter.route_base_question(
-                    DetectionNode(utterance_id="none", pattern="mind_reading", surface="evidence", span=[0, 0]),
-                    domain=graph.current_domain,
-                    blend_with=graph.blend_with,
-                ).socratic_intent,
+                socratic_intent=SocraticIntent.PROBE_EVIDENCE,
                 framing_string=framing,
                 text=q_text,
                 domain=graph.current_domain,
@@ -341,15 +511,17 @@ class StateMachineEngine:
         elif sens_node and sens_node.status == "missing":
             sens_node.statement = utt.text
             sens_node.status = "drafted"
-            # Mark all as drafted and move to S4
-            graph.current_phase = StatePhase.S4_ANGLE
-            return self._init_s4_angle(graph)
+            return self._init_s4_angle(graph, llm_recommendation)
 
-        graph.current_phase = StatePhase.S4_ANGLE
-        return self._init_s4_angle(graph)
+        return self._init_s4_angle(graph, llm_recommendation)
 
-    def _init_s4_angle(self, graph: ProblemGraph) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+    def _init_s4_angle(
+        self,
+        graph: ProblemGraph,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """S4_ANGLE: Generate 1st/2nd/3rd/Systemic perspectives + Reframe grounded in active domain."""
+        graph.current_phase = StatePhase.S4_ANGLE
         pack = get_domain_pack(graph.current_domain)
         p_dict = pack.s4_perspectives
         pos_1_title, pos_1_content = p_dict.get("1st", ("Direct Perspective", "Operating from your core objectives."))
@@ -384,10 +556,7 @@ class StateMachineEngine:
 
         q_node = QuestionNode(
             template_id="angle_perspective_1",
-            socratic_intent=SocraticRouter.route_base_question(
-                DetectionNode(utterance_id="none", pattern="unspecified_referent", surface="observer", span=[0, 0]),
-                domain=graph.current_domain,
-            ).socratic_intent,
+            socratic_intent=SocraticIntent.PROBE_VIEWPOINT,
             framing_string=framing,
             text=q_text,
             domain=graph.current_domain,
@@ -396,8 +565,58 @@ class StateMachineEngine:
         resp = f"We have structured the outcome predicates. Now let's explore alternative angles.\n\n{framing}\n\n{q_text}"
         return StatePhase.S4_ANGLE, q_node, resp
 
-    def _handle_s4_angle(self, graph: ProblemGraph, utt: UtteranceNode) -> Tuple[StatePhase, Optional[QuestionNode], str]:
-        """S4_ANGLE -> S5_ECOLOGY: Stress-test systemic costs."""
+    def _handle_s4_angle(
+        self,
+        graph: ProblemGraph,
+        utt: UtteranceNode,
+        effective_action: PhaseAction = PhaseAction.ADVANCE,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+        """S4_ANGLE: Explores angle or advances to S5_ECOLOGY. Pivots on disengagement."""
+        # Disengagement pivot: user is stuck on abstract framing, offer concrete re-entry
+        if SocraticRouter.is_disengaged(utt.text):
+            if graph.current_domain == "se":
+                pivot_q = "Let's come at this differently — when this system WAS running smoothly, what was different about that setup or configuration?"
+            elif graph.current_domain == "design":
+                pivot_q = "Let's come at this differently — think of a time a user completed this flow without friction. What was different about that session?"
+            elif graph.current_domain == "leadership":
+                pivot_q = "Let's come at this differently — was there a time this stakeholder dynamic worked well? What was different then?"
+            else:
+                pivot_q = "That question might not land right now — and that's fine. Let's come at this differently. When things ARE going well for you, what's different about those moments?"
+            q_node = QuestionNode(
+                template_id="angle_disengage_pivot",
+                socratic_intent=SocraticIntent.PROBE_ALTERNATIVE,
+                framing_string="Pivoting to concrete experience.",
+                text=pivot_q,
+                domain=graph.current_domain,
+            )
+            graph.questions.append(q_node)
+            return StatePhase.S4_ANGLE, q_node, pivot_q
+
+        if effective_action == PhaseAction.STAY:
+            pack = get_domain_pack(graph.current_domain)
+            p_dict = pack.s4_perspectives
+            ref_title, ref_content = p_dict.get("reframe", ("Systemic Reframe", "Treating the challenge as a structural constraint."))
+            framing = "Let's explore the systemic reframe angle."
+            q_text = f"If we view this from a systemic reframe ({ref_title}) — what new leverage point becomes visible?"
+            q_node = QuestionNode(
+                template_id="angle_reframe_2",
+                socratic_intent=SocraticIntent.PROBE_VIEWPOINT,
+                framing_string=framing,
+                text=q_text,
+                domain=graph.current_domain,
+            )
+            graph.questions.append(q_node)
+            return StatePhase.S4_ANGLE, q_node, f"Understood on that observer angle.\n\n{framing}\n\n{q_text}"
+
+        return self._init_s5_ecology(graph, llm_recommendation)
+
+    def _init_s5_ecology(
+        self,
+        graph: ProblemGraph,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+        """S5_ECOLOGY: Stress-test systemic costs and trade-offs."""
         graph.current_phase = StatePhase.S5_ECOLOGY
         if graph.current_domain == "se":
             all_text = " ".join(u.text.lower() for u in graph.utterances)
@@ -419,10 +638,7 @@ class StateMachineEngine:
 
         q_node = QuestionNode(
             template_id="ecology_check_1",
-            socratic_intent=SocraticRouter.route_base_question(
-                DetectionNode(utterance_id="none", pattern="cause_effect", surface="trade-off", span=[0, 0]),
-                domain=graph.current_domain,
-            ).socratic_intent,
+            socratic_intent=SocraticIntent.PROBE_IMPLICATION,
             framing_string=framing,
             text=q_text,
             domain=graph.current_domain,
@@ -430,8 +646,34 @@ class StateMachineEngine:
         graph.questions.append(q_node)
         return StatePhase.S5_ECOLOGY, q_node, f"That perspective adds valuable clarity.\n\n{framing}\n\n{q_text}"
 
-    def _handle_s5_ecology(self, graph: ProblemGraph, utt: UtteranceNode) -> Tuple[StatePhase, Optional[QuestionNode], str]:
-        """S5_ECOLOGY -> S6_DONE: Final synthesis."""
+    def _handle_s5_ecology(
+        self,
+        graph: ProblemGraph,
+        utt: UtteranceNode,
+        effective_action: PhaseAction = PhaseAction.ADVANCE,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+        """S5_ECOLOGY -> S6_DONE: Final synthesis. Pivots on disengagement."""
+        # Disengagement pivot: user stuck on abstract trade-off, offer concrete version
+        if SocraticRouter.is_disengaged(utt.text):
+            if graph.current_domain == "se":
+                pivot_q = "Let's make this concrete — if you ship this fix tomorrow, what is the very first thing that could go wrong in production?"
+            elif graph.current_domain == "design":
+                pivot_q = "Let's make this concrete — if you push this flow live tomorrow, what's the first edge case a real user would hit?"
+            elif graph.current_domain == "leadership":
+                pivot_q = "Let's make this concrete — if you announce this decision tomorrow morning, who pushes back first and what do they say?"
+            else:
+                pivot_q = "Let's make this concrete — if you woke up tomorrow with this fully resolved, what's the very first thing that would be different about your day?"
+            q_node = QuestionNode(
+                template_id="ecology_disengage_pivot",
+                socratic_intent=SocraticIntent.PROBE_IMPLICATION,
+                framing_string="Pivoting to concrete next-step.",
+                text=pivot_q,
+                domain=graph.current_domain,
+            )
+            graph.questions.append(q_node)
+            return StatePhase.S5_ECOLOGY, q_node, pivot_q
+
         graph.constraints.append(
             ConstraintNode(
                 text=utt.text,
@@ -443,15 +685,22 @@ class StateMachineEngine:
         is_capture_cue = any(cue in user_lower for cue in CAPTURE_CUES)
 
         max_ecology = DOMAIN_ECOLOGY_CAPS.get(graph.current_domain, 1)
-        if len(graph.constraints) < max_ecology and not is_capture_cue:
+
+        if llm_recommendation is not None:
+            if effective_action == PhaseAction.ADVANCE or is_capture_cue or len(graph.constraints) >= max_ecology:
+                graph.current_phase = StatePhase.S6_DONE
+                return self._handle_s6_done(graph, utt, llm_recommendation)
+        else:
+            if len(graph.constraints) >= max_ecology or is_capture_cue:
+                graph.current_phase = StatePhase.S6_DONE
+                return self._handle_s6_done(graph, utt, llm_recommendation)
+
+        if len(graph.constraints) < max_ecology:
             framing = "Now let's check secondary stakeholder and organizational bandwidth."
             q_text = "What is the secondary trade-off in team bandwidth or stakeholder alignment if you execute this?"
             q_node = QuestionNode(
                 template_id="ecology_check_2",
-                socratic_intent=SocraticRouter.route_base_question(
-                    DetectionNode(utterance_id="none", pattern="cause_effect", surface="trade-off", span=[0, 0]),
-                    domain=graph.current_domain,
-                ).socratic_intent,
+                socratic_intent=SocraticIntent.PROBE_IMPLICATION,
                 framing_string=framing,
                 text=q_text,
                 domain=graph.current_domain,
@@ -460,9 +709,14 @@ class StateMachineEngine:
             return StatePhase.S5_ECOLOGY, q_node, f"That trade-off is recorded.\n\n{framing}\n\n{q_text}"
 
         graph.current_phase = StatePhase.S6_DONE
-        return self._handle_s6_done(graph, utt)
+        return self._handle_s6_done(graph, utt, llm_recommendation)
 
-    def _handle_s6_done(self, graph: ProblemGraph, utt: UtteranceNode) -> Tuple[StatePhase, Optional[QuestionNode], str]:
+    def _handle_s6_done(
+        self,
+        graph: ProblemGraph,
+        utt: UtteranceNode,
+        llm_recommendation: Optional[LLMTurnRecommendation] = None,
+    ) -> Tuple[StatePhase, Optional[QuestionNode], str]:
         """S6_DONE: Synthesizes Problem Graph into a completed Decision Record."""
         pos = graph.outcome_predicates.get(OutcomePredicateKey.POSITIVE)
         sens = graph.outcome_predicates.get(OutcomePredicateKey.SENSORY)

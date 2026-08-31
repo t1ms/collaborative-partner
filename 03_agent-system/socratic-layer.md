@@ -97,3 +97,13 @@ If closure AND the pattern still lacks a concrete instance → enter deepening (
 
 ### 7.4 Logging
 Each deepening turn is its own `question` node (style: socratic, `deepen_cycle: n`) linked to the same detection, with the same immutable triple + framing string. The audit trail shows precisely how many descents it took to reach bedrock.
+
+### 7.5 Disengagement Signals vs. Closure Signals (Vertical Navigation)
+We maintain a strict boundary between two distinct conversational signals:
+
+| Signal Type | Detector | Example Phrasings | Underlying Meaning | System Behavior |
+|---|---|---|---|---|
+| **Closure** | `is_closure()` | *"that's the only thing"*, *"obviously"*, *"that's all"* | User is offering a shallow answer / under-digging | Escalate S2 deepening ladder (observation split $\to$ metacognitive nudge) |
+| **Disengagement** | `is_disengaged()` | *"idk"*, *"no idea"*, *"how would I know"* | User is experiencing cognitive friction with abstract framing | Pivot down the ladder of abstraction to concrete experiential memory (S4/S5) |
+
+When disengagement occurs on abstract prompts in S4 (3rd-position observer) or S5 (ecology trade-offs), the system does **not** advance to subsequent phases. It stays in the phase and emits an experiential grounding question (e.g., *"When this system WAS running smoothly, what was different about that setup?"*).

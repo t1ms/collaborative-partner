@@ -4,12 +4,12 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
 [![Google Gen AI](https://img.shields.io/badge/Model-Gemini_3.7_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 [![Cloud Run](https://img.shields.io/badge/Cloud_Run-Deployed_Live-34A853?logo=googlecloud&logoColor=white)](https://collaborative-thinking-partner-508821610672.us-central1.run.app)
-[![Tests](https://img.shields.io/badge/Tests-66%20Passed-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/Tests-73%20Passed-brightgreen.svg)](#)
 [![License](https://img.shields.io/badge/License-Apache_2.0_%2F_CC_BY_4.0-blue.svg)](LICENSE)
 
 > **A Socratic Problem-Clarification Engine.**  
 > **Live Demo:** [https://collaborative-thinking-partner-508821610672.us-central1.run.app](https://collaborative-thinking-partner-508821610672.us-central1.run.app)  
-> Rather than offering generic advice or ungrounded solutions, the Thinking Partner debugs the *structure of problem statements* using formal cognitive grammar (11 Meta-Model patterns), 8 Paul-Elder Socratic moves, an empirical working alliance verbosity dial, fluid domain-grounded overlays, and a live mutating Problem Graph.
+> Rather than offering generic advice or ungrounded solutions, the Thinking Partner debugs the *structure of problem statements* using formal cognitive grammar (11 Meta-Model patterns), 8 Paul-Elder Socratic moves, an empirical working alliance verbosity dial, fluid domain-grounded overlays, 6-layer mechanical state machine guardrails, and a live mutating Problem Graph.
 
 ---
 
@@ -19,9 +19,10 @@
 
 ### How It Works
 
-1. **Guided Socratic Descent**
+1. **Guided Socratic Descent & Mechanical Guardrails (Route B)**
    - **5-Phase State Machine (`S0_IDLE → S1_INGEST → S2_CLARIFY → S3_OUTCOME → S4_ANGLE → S5_ECOLOGY → S6_DONE`)** guarantees structured problem progression.
-   - **2-Cycle Deepening Ladder**: Resists shallow closures (*"I don't know"*, *"that's all"*) by escalating through observation splits and metacognitive nudges to reveal load-bearing assumptions.
+   - **6-Layer Deterministic Guardrail Veto**: Turn budgets (S2: 1–5, S3: 1–3, S4: 0–2, S5: 1–2, S6: 1), mandatory phase gates (S2, S3, S5, S6 locked), anti-spiral braking (auto-advancing on low semantic novelty), domain boundary sanitization, and structured JSON contracts.
+   - **2-Cycle Deepening vs. Disengagement Pivoting**: Distinguishes shallow *closure signals* (*"that's all"*, *"obviously"* $\to$ escalate deepening ladder) from *disengagement friction* (*"idk"*, *"how would I know"* $\to$ pivot down the ladder of abstraction to concrete experiential anchors).
    - **Fluid Alliance Voice**: Calibrates turn-level length and reflection using working alliance principles* — synthesizing 2–3 sentence turns that pair verbatim reflection with a single crisp question.
    - **Ladder of Abstraction Navigation**: Oscillates vertically between high-level strategic intent and concrete ground-level moments without dead-level abstraction.
 
@@ -81,7 +82,7 @@ Open **[http://localhost:8000](http://localhost:8000)** to view the live split-p
 
 ## 🧪 Testing
 
-Run the full automated test suite (66/66 unit & integration tests):
+Run the full automated test suite (73/73 unit & integration tests):
 ```bash
 PYTHONPATH=src pytest tests/ -v
 ```

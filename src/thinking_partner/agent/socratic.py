@@ -105,6 +105,13 @@ CLOSURE_CUES = [
     r"\b(i just feel that way|it's self-evident|everyone knows)\b",
 ]
 
+# Disengagement cue words (user is stuck/confused, not just shallow)
+DISENGAGEMENT_CUES = [
+    r"\b(i don'?t know|idk|no idea|not sure|no clue|i have no idea|beats me)\b",
+    r"\b(i don'?t understand|what do you mean|i'?m confused|i'?m not sure what)\b",
+    r"\b(i can'?t (answer|think of|come up with)|how (would|should|am) i)\b",
+]
+
 DOMAIN_FRAMINGS: Dict[str, Dict[Any, str]] = {
     "se": {
         SocraticIntent.PROBE_ASSUMPTION: "What service dependency or architecture assumption is this actually resting on?",
@@ -228,6 +235,20 @@ class SocraticRouter:
                 return True
         if len(clean.split()) <= 3 and not re.search(r"\b(because|when|told|said|showed|measured)\b", clean):
             return True
+        return False
+
+    @staticmethod
+    def is_disengaged(answer_text: str) -> bool:
+        """Detects if the user is stuck/confused rather than giving a shallow closure.
+
+        Disengagement ("idk", "how would I know") is distinct from closure
+        ("that's it", "obviously"). Closure means the user committed to a shallow
+        answer; disengagement means the question was too abstract and needs pivoting.
+        """
+        clean = answer_text.strip().lower()
+        for cue in DISENGAGEMENT_CUES:
+            if re.search(cue, clean):
+                return True
         return False
 
     @staticmethod

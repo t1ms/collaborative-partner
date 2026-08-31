@@ -53,6 +53,21 @@ class StatePhase(str, Enum):
     S6_DONE = "S6_DONE"
 
 
+class PhaseAction(str, Enum):
+    STAY = "stay"
+    ADVANCE = "advance"
+    SKIP_NEXT = "skip_next"
+
+
+class LLMTurnRecommendation(BaseModel):
+    response_text: str = Field(description="Contextual Socratic response text to the user")
+    socratic_intent: SocraticIntent = Field(default=SocraticIntent.CLARIFICATION, description="Primary Socratic intent")
+    phase_action: PhaseAction = Field(default=PhaseAction.STAY, description="Recommended state machine action")
+    phase_reason: str = Field(default="", description="Rationale for recommended phase transition or staying")
+    detected_insight: Optional[str] = Field(default=None, description="Key extracted problem insight or root cause")
+    confidence: float = Field(default=0.8, ge=0.0, le=1.0, description="Confidence in transition recommendation")
+
+
 class DeepeningTechnique(str, Enum):
     OBSERVATION_SPLIT = "observation_split"
     EVIDENCE_LADDER = "evidence_ladder"
@@ -195,6 +210,9 @@ class ProblemGraph(BaseModel):
     edges: List[GraphEdge] = Field(default_factory=list)
     active_detection_id: Optional[str] = None
     taste_profile: TasteProfile = Field(default_factory=TasteProfile)
+    phase_turn_counts: Dict[str, int] = Field(default_factory=dict)
+    phase_history: List[str] = Field(default_factory=list)
+    novelty_history: List[float] = Field(default_factory=list)
     total_output_tokens: int = 0
     turn_timestamps: List[float] = Field(default_factory=list)
     crisis_lock_turns: int = 0

@@ -1,33 +1,35 @@
-# 5-Phase Operational State Machine
+# 5-Phase Operational State Machine & Guardrail Architecture
 
-## States
+## States & Turn Budgets
 `S0_IDLE → S1_INGEST → S2_CLARIFY → S3_OUTCOME → S4_ANGLE → S5_ECOLOGY → S6_DONE`
 
-## Per-state behaviour
-- **S1_INGEST** — classify utterance; emit detections as graph nodes. Transition: if ≥1 detection → S2; else → S2 with `open` flag.
-- **S2_CLARIFY** — pop highest-priority unresolved detection; router selects template; ask one question; record answer. **Deepening sub-loop:** if the answer is a *closure signal* (see socratic-layer.md §7.1) and the pattern still lacks a concrete instance, escalate through the per-pattern deepening ladder (§7.3), max 2 extra cycles, each its own `question` node. Only mark the detection resolved after a concrete answer OR after max cycles. Loop S2 until all detections cleared or user signals move-on. Transition → S3.
-- **S3_OUTCOME** — for each WFO predicate not yet satisfied, ask its canonical question (positive framing, self-initiation, sensory evidence, chunk/granularity, ecology). Transition → S4 when all predicates have a draft; → S2 if a predicate reveals a hidden distortion.
-- **S4_ANGLE** — generate 1st/2nd/3rd/systemic perspectives + one reframe; attach as `perspective` nodes. Transition → S5.
-- **S5_ECOLOGY** — probe costs/trade-offs; add `constraint`/`cost` nodes; if a fatal ecology conflict → back to S3. Transition → S6.
-- **S6_DONE** — synthesize: present the well-formed outcome + the perspectives + the graph trace; offer export.
+| Phase | Min Turns | Max Turns | Skippable? | Purpose |
+|---|---|---|---|---|
+| **S0_IDLE / S1_INGEST** | 0 | 1 | ❌ No | Ingest problem statement, classify patterns, dual-horizon triage |
+| **S2_CLARIFY** | 1 | 5 | ❌ No | Deconstruct assumptions & cognitive distortions; S2 deepening loop |
+| **S3_OUTCOME** | 1 | 3 | ❌ No | Well-Formed Outcome sieve (positive, self-initiated, sensory) |
+| **S4_ANGLE** | 0 | 2 | ✅ Yes | 3rd-position observer reframe; skippable if LLM recommends `skip_next` |
+| **S5_ECOLOGY** | 1 | 2 | ❌ No | Systemic trade-off and secondary constraint mapping |
+| **S6_DONE** | 1 | 1 | ❌ No | Synthesis into live Architecture Decision Record (ADR) |
+| **Total Session** | — | **15** | — | Hard ceiling across all phases to guarantee artifact closure |
 
-## Transition table
-| From | Event | To | Action |
-|---|---|---|---|
-| S0 | user_msg | S1 | classify |
-| S1 | detection(s) | S2 | enqueue detections |
-| S1 | none | S2 | open clarify |
-| S2 | answer logged | S2 | next detection or →S3 |
-| S2 | closure signal + not concrete | S2 | deepen (cycle ≤2) on same detection |
-| S2 | deepened → concrete OR max cycles | S2 | resolve detection |
-| S2 | user "move on" | S3 | |
-| S3 | predicate missing | S3 | ask predicate Q |
-| S3 | all drafted | S4 | |
-| S3 | distortion found | S2 | re-clarify |
-| S4 | perspectives done | S5 | |
-| S5 | conflict | S3 | re-architecture |
-| S5 | clear | S6 | synthesize |
-| S6 | export | S0 | persist + reset |
+## 6-Layer Mechanical Guardrails (Route B Veto Engine)
+1. **Turn Budget Hard Caps**: Vetoes LLM `stay` requests once phase maximum is reached (forces advance); vetoes premature `advance` before phase minimums.
+2. **Mandatory Phase Gates**: S2, S3, S5, and S6 are strictly non-skippable. Only S4 may be bypassed via `skip_next`.
+3. **Structured JSON Output Protocol**: Typed envelope with `response_text`, `socratic_intent`, `phase_action`, `phase_reason`, and `detected_insight`.
+4. **Anti-Spiral Brake**: Automatically overrides `stay` into `advance` if user token overlap (>60%) or stalled intents persist across 3 consecutive turns.
+5. **Disengagement vs. Closure Pivots**:
+   - **Closure Signal** (*"that's it"*, *"obviously"*) $\to$ escalate S2 deepening ladder.
+   - **Disengagement Signal** (*"idk"*, *"how would I know"*) $\to$ in S4/S5, pivot to concrete experiential grounding questions (*"When this system was running smoothly, what was different?"*) instead of advancing into ungrounded phases.
+6. **Domain Boundary Enforcement & Fallback**: Domain vocabulary injection, banned clinical term filtering, and graceful deterministic fallback on LLM timeout.
+
+## Per-state behaviour
+- **S1_INGEST** — Classify utterance; emit detections as graph nodes. Transition $\to$ S2.
+- **S2_CLARIFY** — Pop highest-priority unresolved detection; router selects template or LLM context question. If shallow closure $\to$ 2-cycle deepening ladder. If all resolved or max turns reached $\to$ S3.
+- **S3_OUTCOME** — Sieve WFO predicates (Positive state $\to$ Self-Initiated $\to$ Sensory Evidence). Transition $\to$ S4 (or $\to$ S5 if `skip_next`).
+- **S4_ANGLE** — Generate 1st/2nd/3rd/systemic perspectives + reframe. If user disengages (*"idk"*), pivot to concrete past instance. Transition $\to$ S5.
+- **S5_ECOLOGY** — Stress-test systemic costs and trade-offs. If user disengages (*"idk"*), pivot to concrete next-day simulation. Transition $\to$ S6.
+- **S6_DONE** — Synthesize completed ADR / Decision Canvas and emit final summary.
 
 ## Priority order for detections (S2)
-Cause-Effect / Mind-Reading / Complex-Equivalence (distortions first — they fabricate structure) → Unspecified referent / verb / simple deletion → Modal necessity/possibility → Universal quantifier → Comparative deletion → Nominalization.
+Distortions first (Cause-Effect / Mind-Reading / Complex-Equivalence — they fabricate structure) $\to$ Deletions (Unspecified referent / verb / simple deletion) $\to$ Generalizations (Modal necessity / possibility $\to$ Universal quantifier $\to$ Comparative deletion).
